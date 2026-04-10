@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.web.WebView?>
+<HBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.example.demo.ChatController"
+      stylesheets="@style.css"
+      styleClass="app-container"
+      spacing="0">
+
+
+    <BorderPane styleClass="chat-panel" HBox.hgrow="ALWAYS">
+
+        <!-- Header -->
+        <top>
+            <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="8">
+                <!--                <Label styleClass="terminal-symbol" text="&#36;" />-->
+                <Text text="#"></Text>
+                <Label fx:id="activeChannel" text="No channel selected" HBox.hgrow="ALWAYS"/>
+                <!--                <Button fx:id="audioToggleBtn" styleClass="terminal-button,audio-btn" text="🔊"/>-->
+                <!--                <Button fx:id="audioLockBtn" styleClass="terminal-button,audio-btn" text="🔓"/>-->
+
+                <Region HBox.hgrow="ALWAYS"></Region>
+                <!-- right side of header -->
+                <HBox alignment="CENTER_RIGHT" spacing="8">
+                    <HBox fx:id="connectionStatus" styleClass="connection-status" alignment="CENTER"
+                          spacing="6">
+                        <Label fx:id="viewerCount" styleClass="viewer-count" text="0"/>
+                        <Label fx:id="viewerCountName" styleClass="viewer-count-name"
+                               text="viewers"/>
+
+                    </HBox>
+                    <Button fx:id="minimizeBtn" styleClass="terminal-button,minimize-btn"
+                            text="&gt;&gt;"
+                            onAction="#onMinimize"/>
+                    <Button fx:id="restoreBtn" styleClass="restore-button" text="&lt;&lt;"
+                            onAction="#onRestore"
+                            visible="false" managed="false"/>
+                </HBox>
+            </HBox>
+        </top>
+
+        <center>
+            <WebView fx:id="chatWebView"/>
+        </center>
+
+        <!-- Input bar -->
+        <!--        <bottom>-->
+        <!--            <HBox styleClass="chat-input-container,input-prompt" spacing="6" alignment="CENTER_LEFT">-->
+        <!--                <Label text=">"/>-->
+        <!--                <TextField fx:id="messageInput"-->
+        <!--                           styleClass="message-field"-->
+        <!--                           promptText="Send a message..."-->
+        <!--                           HBox.hgrow="ALWAYS"-->
+        <!--                           onAction="#onSendMessage"/>-->
+        <!--                <Button text="Send"-->
+        <!--                        styleClass="terminal-button"-->
+        <!--                        onAction="#onSendMessage"/>-->
+        <!--            </HBox>-->
+        <!--        </bottom>-->
+
+    </BorderPane>
+
+    <BorderPane fx:id="channelPanel" styleClass="channel-panel">
+
+        <!-- Header -->
+        <top>
+            <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="8">
+                <!--                <Label styleClass="terminal-symbol" text="" HBox.hgrow="ALWAYS"/>-->
+                <Region HBox.hgrow="ALWAYS"></Region>
+
+                <HBox styleClass="connection-buttons" spacing="4">
+                    <Button fx:id="connectBtn" styleClass="terminal-button,connect-btn"
+                            text="Connect"
+                            onAction="#onConnect" visible="true" managed="true"/>
+                    <Button fx:id="disconnectBtn" styleClass="terminal-button,disconnect-btn"
+                            text="Disconnect"
+                            onAction="#onDisconnect" visible="false" managed="false"/>
+                </HBox>
+            </HBox>
+        </top>
+
+        <!-- Channel list -->
+        <center>
+            <ListView fx:id="channelList" styleClass="channel-list"/>
+        </center>
+
+        <!-- Add channel input -->
+        <bottom>
+            <HBox styleClass="channel-actions,input-group" spacing="2" alignment="CENTER">
+                <!--                <HBox.margin>-->
+                <!--                    <Insets top="10" right="4" bottom="6" left="6"/>-->
+                <!--                </HBox.margin>-->
+                <TextField fx:id="newChannelInput"
+                           promptText="Add channel..."
+                           HBox.hgrow="ALWAYS"
+                           onAction="#onAddChannel"
+                />
+                <Button text="Add"
+                        styleClass="terminal-button"
+                        onAction="#onAddChannel"
+                />
+            </HBox>
+        </bottom>
+
+    </BorderPane>
+
+</HBox>

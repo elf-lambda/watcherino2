@@ -1,0 +1,269 @@
+/* ── Root / Scene background ── */
+.root {
+    -fx-background-color: #f5f5f5;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 13px;
+}
+
+.app-container {
+    -fx-background-color: #f5f5f5;
+}
+
+.chat-panel {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 1 0 0;
+}
+
+.panel-header {
+    -fx-background-color: #ebebeb;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 12 8 12;
+    -fx-min-height: 40px;
+}
+
+.label {
+    -fx-text-fill: #222222;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 13px;
+}
+
+.terminal-symbol {
+    -fx-text-fill: #000000;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 14px;
+}
+
+#activeChannel {
+    -fx-text-fill: #000000;
+    -fx-font-size: 14px;
+    -fx-font-family: "Consolas", "Monospaced";
+}
+
+.viewer-count {
+    -fx-text-fill: #D10000;
+    -fx-font-size: 13px;
+    -fx-font-family: "Consolas", "Monospaced";
+}
+
+.viewer-count-name {
+    -fx-text-fill: #555555;
+    -fx-font-size: 13px;
+    -fx-font-family: "Consolas", "Monospaced";
+}
+
+
+.button {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #222222;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 12px;
+    -fx-padding: 7 13 7 13;
+    -fx-cursor: hand;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+}
+
+.button:hover {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #000000;
+}
+
+.button:pressed {
+    -fx-translate-y: 1;
+}
+
+.terminal-button {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #222222;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 10px;
+    -fx-padding: 4 8 4 8;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-min-width: 60px;
+}
+
+.terminal-button:hover {
+    -fx-background-color: #000000;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #000000;
+}
+
+.connect-btn {
+    -fx-background-color: #888888;
+    -fx-border-color: #888888;
+    -fx-text-fill: #ffffff;
+}
+
+.connect-btn:hover {
+    -fx-background-color: #000000;
+    -fx-border-color: #000000;
+    -fx-text-fill: #ffffff;
+}
+
+.disconnect-btn {
+    -fx-background-color: #888888;
+    -fx-border-color: #888888;
+    -fx-text-fill: #ffffff;
+}
+
+.disconnect-btn:hover {
+    -fx-background-color: #000000;
+    -fx-border-color: #000000;
+    -fx-text-fill: #ffffff;
+}
+
+.chat-messages {
+    -fx-background-color: #f5f5f5;
+    -fx-background: #f5f5f5;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.chat-messages .viewport {
+    -fx-background-color: #f5f5f5;
+}
+
+.chat-messages-inner {
+    -fx-background-color: #f5f5f5;
+    -fx-padding: 8;
+    -fx-spacing: 2;
+}
+
+.system-message {
+    -fx-text-fill: #999999;
+    -fx-font-style: italic;
+    -fx-font-family: "Consolas", "Monospaced";
+}
+
+.chat-input-container {
+    -fx-background-color: #ebebeb;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 8 12 8 12;
+}
+
+.timestamp {
+    -fx-text-fill: #999999;
+    -fx-fill: #999999;
+    -fx-font-size: 12px;
+    -fx-font-family: "Consolas", "Monospaced";
+}
+
+.chat-text {
+    -fx-text-fill: #111111;
+    -fx-fill: #111111;
+    -fx-wrap-text: true;
+}
+
+.text-flow Text {
+    -fx-fill: #111111;
+}
+
+.text-field {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #222222;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 12px;
+    -fx-padding: 7 10 7 10;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-prompt-text-fill: #aaaaaa;
+}
+
+.text-field:focused {
+    -fx-border-color: #000000;
+    -fx-background-color: #ffffff;
+}
+
+.channel-panel {
+    -fx-background-color: #ebebeb;
+    -fx-min-width: 170px;
+    -fx-max-width: 170px;
+    -fx-pref-width: 170px;
+}
+
+.channel-list {
+    -fx-background-color: #ebebeb;
+    -fx-border-color: transparent;
+    -fx-padding: 4;
+}
+
+.channel-list .list-cell {
+    -fx-background-color: #f5f5f5;
+    -fx-text-fill: #222222;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 13px;
+    -fx-padding: 4 6 4 6;
+    -fx-background-radius: 0;
+
+    /* ADD THESE LINES */
+    -fx-text-overrun: ellipsis; /* Adds the ... */
+    -fx-max-width: 130px; /* Slightly less than the 150px panel */
+    -fx-pref-width: 130px;
+}
+
+.channel-list .list-cell:hover {
+    -fx-background-color: #e0e0e0;
+    -fx-border-color: #000000;
+}
+
+.channel-list .list-cell:selected {
+    -fx-background-color: #e0e0e0;
+    -fx-border-color: #000000;
+    -fx-text-fill: #000000;
+}
+
+.channel-list .list-cell:empty {
+    -fx-background-color: #ebebeb;
+    -fx-border-color: transparent;
+}
+
+.channel-actions {
+    -fx-background-color: #ebebeb;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 7;
+}
+
+.scroll-bar {
+    -fx-background-color: #f5f5f5;
+    -fx-pref-width: 6px;
+    -fx-pref-height: 6px;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #aaaaaa;
+    -fx-background-radius: 3;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #888888;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #f5f5f5;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: #f5f5f5;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
