@@ -1,76 +1,75 @@
-/* ── Root / Scene background ── */
 .root {
-    -fx-background-color: #f5f5f5;
+    -fx-background-color: #000000;
     -fx-font-family: "Consolas", "Monospaced";
     -fx-font-size: 13px;
 }
 
 .app-container {
-    -fx-background-color: #f5f5f5;
+    -fx-background-color: #000000;
 }
 
 .chat-panel {
-    -fx-background-color: #f5f5f5;
-    -fx-border-color: #cccccc;
+    -fx-background-color: #000000;
+    -fx-border-color: #2a2a2a;
     -fx-border-width: 0 1 0 0;
 }
 
 .panel-header {
-    -fx-background-color: #ebebeb;
-    -fx-border-color: #cccccc;
+    -fx-background-color: #111111;
+    -fx-border-color: #2a2a2a;
     -fx-border-width: 0 0 1 0;
     -fx-padding: 8 12 8 12;
-    -fx-min-height: 40px;
+    -fx-min-height: 36px;
 }
 
 .label {
-    -fx-text-fill: #222222;
+    -fx-text-fill: #eaeaea;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 12px;
+}
+
+.terminal-symbol {
+    -fx-text-fill: #eaeaea;
     -fx-font-family: "Consolas", "Monospaced";
     -fx-font-size: 13px;
 }
 
-.terminal-symbol {
-    -fx-text-fill: #000000;
-    -fx-font-family: "Consolas", "Monospaced";
-    -fx-font-size: 14px;
-}
-
 #activeChannel {
-    -fx-text-fill: #000000;
-    -fx-font-size: 14px;
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 13px;
     -fx-font-family: "Consolas", "Monospaced";
 }
 
 .viewer-count {
-    -fx-text-fill: #D10000;
+    -fx-text-fill: #b5004b;
     -fx-font-size: 13px;
     -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-weight: bold;
 }
 
 .viewer-count-name {
-    -fx-text-fill: #555555;
-    -fx-font-size: 13px;
+    -fx-text-fill: #949393;
+    -fx-font-size: 14px;
     -fx-font-family: "Consolas", "Monospaced";
 }
 
-
 .button {
-    -fx-background-color: #e0e0e0;
-    -fx-text-fill: #222222;
-    -fx-border-color: #cccccc;
+    -fx-background-color: transparent;
+    -fx-text-fill: #eaeaea;
+    -fx-border-color: #2a2a2a;
     -fx-border-width: 1;
     -fx-font-family: "Consolas", "Monospaced";
     -fx-font-size: 12px;
-    -fx-padding: 7 13 7 13;
+    -fx-padding: 4 10 4 10;
     -fx-cursor: hand;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
 }
 
 .button:hover {
-    -fx-background-color: #000000;
-    -fx-text-fill: #ffffff;
-    -fx-border-color: #000000;
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #000000;
+    -fx-border-color: #ffffff;
 }
 
 .button:pressed {
@@ -78,187 +77,163 @@
 }
 
 .terminal-button {
-    -fx-background-color: #e0e0e0;
-    -fx-text-fill: #222222;
-    -fx-border-color: #cccccc;
+    -fx-background-color: transparent;
+    -fx-text-fill: #eaeaea;
+    -fx-border-color: #2a2a2a;
     -fx-border-width: 1;
     -fx-font-family: "Consolas", "Monospaced";
     -fx-font-size: 10px;
-    -fx-padding: 4 8 4 8;
+    -fx-padding: 3 8 3 8;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
-    -fx-min-width: 60px;
+    -fx-min-width: 50px;
 }
 
 .terminal-button:hover {
-    -fx-background-color: #000000;
-    -fx-text-fill: #ffffff;
-    -fx-border-color: #000000;
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #000000;
+    -fx-border-color: #ffffff;
 }
 
 .connect-btn {
-    -fx-background-color: #888888;
-    -fx-border-color: #888888;
-    -fx-text-fill: #ffffff;
+    -fx-background-color: transparent;
+    -fx-border-color: #2a2a2a;
+    -fx-text-fill: #afaeae;
 }
 
 .connect-btn:hover {
-    -fx-background-color: #000000;
-    -fx-border-color: #000000;
-    -fx-text-fill: #ffffff;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #ffffff;
+    -fx-text-fill: #000000;
 }
 
 .disconnect-btn {
-    -fx-background-color: #888888;
-    -fx-border-color: #888888;
-    -fx-text-fill: #ffffff;
+    -fx-background-color: transparent;
+    -fx-border-color: #2a2a2a;
+    -fx-text-fill: #555555;
 }
 
 .disconnect-btn:hover {
-    -fx-background-color: #000000;
-    -fx-border-color: #000000;
-    -fx-text-fill: #ffffff;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #ffffff;
+    -fx-text-fill: #000000;
 }
 
 .chat-messages {
-    -fx-background-color: #f5f5f5;
-    -fx-background: #f5f5f5;
+    -fx-background-color: #000000;
+    -fx-background: #000000;
     -fx-border-color: transparent;
     -fx-padding: 0;
 }
 
 .chat-messages .viewport {
-    -fx-background-color: #f5f5f5;
-}
-
-.chat-messages-inner {
-    -fx-background-color: #f5f5f5;
-    -fx-padding: 8;
-    -fx-spacing: 2;
+    -fx-background-color: #000000;
 }
 
 .system-message {
-    -fx-text-fill: #999999;
+    -fx-text-fill: #444444;
     -fx-font-style: italic;
     -fx-font-family: "Consolas", "Monospaced";
 }
 
 .chat-input-container {
-    -fx-background-color: #ebebeb;
-    -fx-border-color: #cccccc;
+    -fx-background-color: #111111;
+    -fx-border-color: #2a2a2a;
     -fx-border-width: 1 0 0 0;
     -fx-padding: 8 12 8 12;
 }
 
-.timestamp {
-    -fx-text-fill: #999999;
-    -fx-fill: #999999;
-    -fx-font-size: 12px;
-    -fx-font-family: "Consolas", "Monospaced";
-}
-
-.chat-text {
-    -fx-text-fill: #111111;
-    -fx-fill: #111111;
-    -fx-wrap-text: true;
-}
-
-.text-flow Text {
-    -fx-fill: #111111;
-}
-
 .text-field {
-    -fx-background-color: #ffffff;
-    -fx-text-fill: #222222;
-    -fx-border-color: #cccccc;
+    -fx-background-color: #111111;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #2a2a2a;
     -fx-border-width: 1;
     -fx-font-family: "Consolas", "Monospaced";
     -fx-font-size: 12px;
-    -fx-padding: 7 10 7 10;
+    -fx-padding: 6 10 6 10;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
-    -fx-prompt-text-fill: #aaaaaa;
+    -fx-prompt-text-fill: #eaeaea;
 }
 
 .text-field:focused {
-    -fx-border-color: #000000;
-    -fx-background-color: #ffffff;
+    -fx-border-color: #444444;
+    -fx-background-color: #111111;
 }
 
 .channel-panel {
-    -fx-background-color: #ebebeb;
+    -fx-background-color: #111111;
     -fx-min-width: 170px;
     -fx-max-width: 170px;
     -fx-pref-width: 170px;
 }
 
 .channel-list {
-    -fx-background-color: #ebebeb;
+    -fx-background-color: #111111;
     -fx-border-color: transparent;
     -fx-padding: 4;
 }
 
 .channel-list .list-cell {
-    -fx-background-color: #f5f5f5;
-    -fx-text-fill: #222222;
-    -fx-border-color: #cccccc;
+    -fx-background-color: #000000;
+    -fx-text-fill: #cccccc;
+    -fx-border-color: #1a1a1a;
     -fx-border-width: 1;
     -fx-font-family: "Consolas", "Monospaced";
-    -fx-font-size: 13px;
-    -fx-padding: 4 6 4 6;
+    -fx-font-size: 12px;
+    -fx-padding: 3 4 3 4;
     -fx-background-radius: 0;
-
-    /* ADD THESE LINES */
-    -fx-text-overrun: ellipsis; /* Adds the ... */
-    -fx-max-width: 130px; /* Slightly less than the 150px panel */
+    -fx-text-overrun: ellipsis;
+    -fx-max-width: 130px;
     -fx-pref-width: 130px;
 }
 
 .channel-list .list-cell:hover {
-    -fx-background-color: #e0e0e0;
-    -fx-border-color: #000000;
+    -fx-background-color: #0a0a0a;
+    -fx-border-color: #ffffff;
+    -fx-text-fill: #cccccc;
 }
 
 .channel-list .list-cell:selected {
-    -fx-background-color: #e0e0e0;
-    -fx-border-color: #000000;
-    -fx-text-fill: #000000;
+    -fx-background-color: #0a0a0a;
+    -fx-border-color: #ffffff;
+    -fx-text-fill: #ffffff;
 }
 
 .channel-list .list-cell:empty {
-    -fx-background-color: #ebebeb;
+    -fx-background-color: #111111;
     -fx-border-color: transparent;
 }
 
 .channel-actions {
-    -fx-background-color: #ebebeb;
-    -fx-border-color: #cccccc;
+    -fx-background-color: #111111;
+    -fx-border-color: #2a2a2a;
     -fx-border-width: 1 0 0 0;
-    -fx-padding: 7;
+    -fx-padding: 6;
 }
 
 .scroll-bar {
-    -fx-background-color: #f5f5f5;
-    -fx-pref-width: 6px;
-    -fx-pref-height: 6px;
+    -fx-background-color: #000000;
+    -fx-pref-width: 4px;
+    -fx-pref-height: 4px;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: #aaaaaa;
-    -fx-background-radius: 3;
+    -fx-background-color: #2a2a2a;
+    -fx-background-radius: 2;
 }
 
 .scroll-bar .thumb:hover {
-    -fx-background-color: #888888;
+    -fx-background-color: #444444;
 }
 
 .scroll-bar .track {
-    -fx-background-color: #f5f5f5;
+    -fx-background-color: #000000;
 }
 
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button {
-    -fx-background-color: #f5f5f5;
+    -fx-background-color: #000000;
     -fx-padding: 0;
 }
 
@@ -266,4 +241,39 @@
 .scroll-bar .decrement-arrow {
     -fx-shape: "";
     -fx-padding: 0;
+}
+
+/* Context menu dark theme */
+.context-menu {
+    -fx-background-color: #111111;
+    -fx-border-color: #2a2a2a;
+    -fx-border-width: 1;
+    -fx-padding: 2;
+}
+
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-padding: 5 12 5 12;
+}
+
+.menu-item .label {
+    -fx-text-fill: #eaeaea;
+    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-size: 12px;
+}
+
+.menu-item:hover {
+    -fx-background-color: #1a1a1a;
+}
+
+.menu-item:hover .label {
+    -fx-text-fill: #ffffff;
+}
+
+.menu-item:focused {
+    -fx-background-color: #1a1a1a;
+}
+
+.menu-item:focused .label {
+    -fx-text-fill: #ffffff;
 }

@@ -11,9 +11,9 @@ public class TwitchMessage {
   public final LocalTime timestamp;
   public final Map<String, String> tags;
   public boolean isSystemMessage;
-  public boolean isModerator; // TODO implement
-  public boolean isVIP; // TODO implement
-  public boolean isStreamer; // TODO implement
+  public boolean isModerator;
+  public boolean isVIP;
+  public boolean isStreamer;
 
   public TwitchMessage(String username, String content, String channel,
                        String userColor, Map<String, String> tags, boolean isSystemMessage) {

@@ -15,6 +15,7 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
+import org.example.demo.tts.AudioPlayer;
 import org.example.demo.twitch.*;
 
 import java.util.HashMap;
@@ -60,6 +61,7 @@ public class ChatController {
 
   @FXML
   public void initialize() {
+    AudioPlayer.playWav("./tts/ding.wav", 0.1f);
     engine = chatWebView.getEngine();
 
     chatWebView.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
@@ -128,8 +130,21 @@ public class ChatController {
 
       AtomicInteger count = new AtomicInteger();
       // TODO: write proper config
+      // Replace your existing defaults array with this:
+//      String[] dummyChannels = java.util.stream.IntStream.rangeClosed(1, 25)
+//              .mapToObj(i -> "test_user_" + i)
+//              .toArray(String[]::new);
+//
+//      String[] realChannels = {"pajlada", "forsen", "brian6932"};
+//
+//      // Combine them into the final defaults array
+//      String[] defaults = java.util.stream.Stream.concat(
+//              java.util.Arrays.stream(dummyChannels),
+//              java.util.Arrays.stream(realChannels)
+//      ).toArray(String[]::new);
       String[] defaults = {
-              "forsen"};
+              "forsen"
+      };
       for (String name : defaults) {
         Platform.runLater(() -> {
           addChannel(name);
@@ -138,7 +153,7 @@ public class ChatController {
       }
 
       Platform.runLater(() -> {
-        addSystemMessage("<b>-- " + count + " CHANNELS LOADED-- </b>", false);
+        addSystemMessage("-- " + count + " CHANNELS LOADED --", false);
       });
     });
     loaderThread.setDaemon(true);
@@ -182,7 +197,7 @@ public class ChatController {
    */
   private void switchChannel(TwitchChannel channel) {
     activeChannelName = channel.getName();
-    activeChannel.setText(channel.getName());
+    activeChannel.setText("#" + channel.getName());
 
     Platform.runLater(() -> engine.executeScript("clearChat()"));
 
@@ -282,8 +297,12 @@ public class ChatController {
 
     Platform.runLater(() ->
             engine.executeScript(
-                    String.format("appendMessage(`%s`, `%s`, `%s`, `%s`, %b)",
-                            time, safeUser2, safeColor, safeRendered, message.isSystemMessage)
+                    String.format("appendMessage(`%s`, `%s`, `%s`, `%s`, %b, %b, %b, %b)",
+                            time, safeUser2, safeColor, safeRendered,
+                            message.isSystemMessage,
+                            message.isModerator,
+                            message.isVIP,
+                            message.isStreamer)
             )
     );
   }

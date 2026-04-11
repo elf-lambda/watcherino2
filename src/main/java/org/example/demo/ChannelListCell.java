@@ -31,10 +31,10 @@ public class ChannelListCell extends ListCell<TwitchChannel> {
         e.consume(); // prevent right-click from selecting the cell
       }
     });
-    
+
     nameLabel = new Label();
     nameLabel.setStyle("""
-                -fx-text-fill: #222222;
+                -fx-text-fill: #cccccc;
                 -fx-font-family: 'Consolas', 'Monospaced';
                 -fx-font-size: 13px;
             """);
@@ -56,7 +56,7 @@ public class ChannelListCell extends ListCell<TwitchChannel> {
     removeBtn = new Button("✕");
     removeBtn.setStyle("""
                 -fx-background-color: transparent;
-                -fx-text-fill: #999999;
+                -fx-text-fill: #555555;
                 -fx-font-size: 11px;
                 -fx-padding: 0 2 0 2;
                 -fx-cursor: hand;
@@ -64,7 +64,7 @@ public class ChannelListCell extends ListCell<TwitchChannel> {
             """);
     removeBtn.setOnMouseEntered(e -> removeBtn.setStyle("""
                 -fx-background-color: transparent;
-                -fx-text-fill: #cc0000;
+                -fx-text-fill: #ff4444;
                 -fx-font-size: 11px;
                 -fx-padding: 0 2 0 2;
                 -fx-cursor: hand;
@@ -72,7 +72,7 @@ public class ChannelListCell extends ListCell<TwitchChannel> {
             """));
     removeBtn.setOnMouseExited(e -> removeBtn.setStyle("""
                 -fx-background-color: transparent;
-                -fx-text-fill: #999999;
+                -fx-text-fill: #555555;
                 -fx-font-size: 11px;
                 -fx-padding: 0 2 0 2;
                 -fx-cursor: hand;
@@ -85,7 +85,7 @@ public class ChannelListCell extends ListCell<TwitchChannel> {
 
     // Hover
     container.setOnMouseEntered(e ->
-            container.setStyle("-fx-background-color: #dfe8d8;")
+            container.setStyle("-fx-background-color: #1f1f1f;")
     );
     container.setOnMouseExited(e ->
             container.setStyle("-fx-background-color: transparent;")
@@ -133,9 +133,10 @@ public class ChannelListCell extends ListCell<TwitchChannel> {
 
       setGraphic(container);
       setText(null);
+// updateItem cell border color
       setStyle("""
                   -fx-background-color: transparent;
-                  -fx-border-color: #cccccc;
+                  -fx-border-color: #2a2a2a;
                   -fx-border-width: 0 0 1 0;
                   -fx-padding: 0;
               """);

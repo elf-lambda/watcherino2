@@ -2,7 +2,6 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Text?>
 <?import javafx.scene.web.WebView?>
 <HBox xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="org.example.demo.ChatController"
@@ -17,7 +16,7 @@
         <top>
             <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="8">
                 <!--                <Label styleClass="terminal-symbol" text="&#36;" />-->
-                <Text text="#"></Text>
+                <!--                <Label styleClass="viewer-count-name" text="#"></Label>-->
                 <Label fx:id="activeChannel" text="No channel selected" HBox.hgrow="ALWAYS"/>
                 <!--                <Button fx:id="audioToggleBtn" styleClass="terminal-button,audio-btn" text="🔊"/>-->
                 <!--                <Button fx:id="audioLockBtn" styleClass="terminal-button,audio-btn" text="🔓"/>-->

@@ -44,15 +44,19 @@ function appendSystemMessage(renderedMessage, isSystem) {
     }
 }
 
-function appendMessage(timestamp, username, userColor, renderedMessage, isSystem) {
+function appendMessage(timestamp, username, userColor, renderedMessage, isSystem, isMod, isVip, isStreamer) {
     const div = document.createElement('div');
-
     div.className = isSystem ? 'msg system-msg' : 'msg';
+
+    // Build underline color based on role priority: streamer > mod > vip
+    let badge = '';
+    if (isStreamer) badge = `<span style="display:inline-block; width:7px; height:7px; background:rgba(231,76,60,0.6); margin-right:3px; vertical-align:middle;"></span>`;
+    else if (isMod) badge = `<span style="display:inline-block; width:7px; height:7px; background:rgba(46,204,113,0.6); margin-right:3px; vertical-align:middle;"></span>`;
+    else if (isVip) badge = `<span style="display:inline-block; width:7px; height:7px; background:rgba(155,89,182,0.6); margin-right:3px; vertical-align:middle;"></span>`;
 
     const userSpan = isSystem
         ? `<span class="username" style="color: ${userColor}; font-style: italic;">[SYSTEM]:</span> `
-        : `<span class="username" style="color: ${userColor};">${username}:</span> `;
-
+        : `${badge}<span class="username" style="color: ${userColor};">${username}:</span> `;
     div.innerHTML = `<span class="timestamp">[${timestamp}]</span>`
         + userSpan
         + renderedMessage;
@@ -91,5 +95,5 @@ document.addEventListener('copy', function (e) {
 });
 
 window.onload = () => {
-    appendSystemMessage("<b>-- CONNECTING TO CHANNELS --</b>");
+    appendSystemMessage("-- CONNECTING TO CHANNELS --");
 }

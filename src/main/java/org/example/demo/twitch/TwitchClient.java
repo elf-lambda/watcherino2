@@ -18,9 +18,14 @@ public class TwitchClient {
   private static final int PORT = 6667;
   private static final int BUFFER_SIZE = 512;
   private static final String[] DEFAULT_COLORS = {
-          "#c0392b", "#2471a3", "#1e8449", "#6c3483", "#d35400",
-          "#117a65", "#b7770d", "#1a252f", "#922b21", "#0e6655"
+          "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#e67e22",
+          "#1abc9c", "#f1c40f", "#95a5a6", "#e91e63", "#00bcd4"
   };
+  // Light
+//  private static final String[] DEFAULT_COLORS = {
+//          "#c0392b", "#2471a3", "#1e8449", "#6c3483", "#d35400",
+//          "#117a65", "#b7770d", "#1a252f", "#922b21", "#0e6655"
+//  };
   private static final int SOCKET_TIMEOUT_MS = 60_000;
   private static final int PING_INTERVAL_MS = 30_000;
   private final String channel;
@@ -200,9 +205,17 @@ public class TwitchClient {
     String content = contentParts[1];
 
     String color = tags.getOrDefault("color", "");
-    String userColor = color.isEmpty() ? getDefaultColor(username) : adjustColorForLight(color);
+    String userColor = color.isEmpty() ? getDefaultColor(username) : adjustColorForDark(color);
 
-    return new TwitchMessage(username, content, channel, userColor, tags, false);
+    TwitchMessage msg = new TwitchMessage(username, content, channel, userColor, tags, false);
+
+    // Parse badges tag — "broadcaster/1,moderator/1,vip/1" etc
+    String badges = tags.getOrDefault("badges", "");
+    msg.isStreamer = badges.contains("broadcaster");
+    msg.isModerator = badges.contains("moderator");
+    msg.isVIP = badges.contains("vip");
+
+    return msg;
   }
 
   private TwitchMessage parseClearChat(String data) {
@@ -256,33 +269,57 @@ public class TwitchClient {
     return new TwitchMessage(username, content, channel, "#b8860b", tags, true);
   }
 
-  private String adjustColorForLight(String hex) {
+  private String adjustColorForDark(String hex) {
     try {
       hex = hex.replace("#", "");
-      if (hex.length() != 6) return "#333333";
+      if (hex.length() != 6) return "#cccccc";
 
       int r = Integer.parseInt(hex.substring(0, 2), 16);
       int g = Integer.parseInt(hex.substring(2, 4), 16);
       int b = Integer.parseInt(hex.substring(4, 6), 16);
 
-      // Darken by 40% toward black
-      r = (int) (r * 0.6);
-      g = (int) (g * 0.6);
-      b = (int) (b * 0.6);
-
-      // If it's still too light for a light background, darken more
+      // If too dark for dark background, lighten it
       double luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-      if (luminance > 140) {
-        r = (int) (r * 0.5);
-        g = (int) (g * 0.5);
-        b = (int) (b * 0.5);
+      if (luminance < 80) {
+        r = (int) (r + (255 - r) * 0.5);
+        g = (int) (g + (255 - g) * 0.5);
+        b = (int) (b + (255 - b) * 0.5);
       }
 
       return String.format("#%02x%02x%02x", r, g, b);
     } catch (Exception e) {
-      return "#333333";
+      return "#cccccc";
     }
   }
+
+  // Light
+//  private String adjustColorForLight(String hex) {
+//    try {
+//      hex = hex.replace("#", "");
+//      if (hex.length() != 6) return "#333333";
+//
+//      int r = Integer.parseInt(hex.substring(0, 2), 16);
+//      int g = Integer.parseInt(hex.substring(2, 4), 16);
+//      int b = Integer.parseInt(hex.substring(4, 6), 16);
+//
+//      // Darken by 40% toward black
+//      r = (int) (r * 0.6);
+//      g = (int) (g * 0.6);
+//      b = (int) (b * 0.6);
+//
+//      // If it's still too light for a light background, darken more
+//      double luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+//      if (luminance > 140) {
+//        r = (int) (r * 0.5);
+//        g = (int) (g * 0.5);
+//        b = (int) (b * 0.5);
+//      }
+//
+//      return String.format("#%02x%02x%02x", r, g, b);
+//    } catch (Exception e) {
+//      return "#333333";
+//    }
+//  }
 
 
   private String getDefaultColor(String username) {
