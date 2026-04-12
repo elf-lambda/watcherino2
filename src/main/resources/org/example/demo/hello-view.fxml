@@ -70,14 +70,16 @@
                 <!--                <Label styleClass="terminal-symbol" text="" HBox.hgrow="ALWAYS"/>-->
                 <Region HBox.hgrow="ALWAYS"></Region>
 
-                <HBox styleClass="connection-buttons" spacing="4">
-                    <Button fx:id="connectBtn" styleClass="terminal-button,connect-btn"
-                            text="Connect"
-                            onAction="#onConnect" visible="true" managed="true"/>
-                    <Button fx:id="disconnectBtn" styleClass="terminal-button,disconnect-btn"
-                            text="Disconnect"
-                            onAction="#onDisconnect" visible="false" managed="false"/>
-                </HBox>
+                <Button text="Settings" styleClass="terminal-button"
+                        onAction="#onOpenSettings"/>
+                <!--                <HBox styleClass="connection-buttons" spacing="4">-->
+                <!--                    <Button fx:id="connectBtn" styleClass="terminal-button,connect-btn"-->
+                <!--                            text="Connect"-->
+                <!--                            onAction="#onConnect" visible="true" managed="true"/>-->
+                <!--                    <Button fx:id="disconnectBtn" styleClass="terminal-button,disconnect-btn"-->
+                <!--                            text="Disconnect"-->
+                <!--                            onAction="#onDisconnect" visible="false" managed="false"/>-->
+                <!--                </HBox>-->
             </HBox>
         </top>
 

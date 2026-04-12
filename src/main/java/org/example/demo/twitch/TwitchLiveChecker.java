@@ -162,4 +162,8 @@ public class TwitchLiveChecker {
       return null;
     }
   }
+
+  public void setSoundConfig(String ttsExecutablePath, float volume) {
+    //TODO: implement
+  }
 }

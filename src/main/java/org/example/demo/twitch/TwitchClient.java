@@ -336,6 +336,13 @@ public class TwitchClient {
       if (socket != null) socket.close();
     } catch (IOException ignored) {
     }
+    // To kill ping threads TODO: rework with virutal threads?
+    try {
+      if (pingThread != null) pingThread.join(2000);
+      if (listenerThread != null) listenerThread.join(2000);
+    } catch (InterruptedException ignored) {
+    }
+    System.out.println("Stopped " + channel);
   }
 
   public boolean isConnected() {

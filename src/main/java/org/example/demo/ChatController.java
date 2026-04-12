@@ -6,6 +6,8 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -13,13 +15,18 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
+import org.example.demo.config.Config;
 import org.example.demo.tts.TTSGenerator;
 import org.example.demo.twitch.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,9 +40,6 @@ public class ChatController {
 
   private final JavaBridge bridge = new JavaBridge();
   private final Map<String, String> emoteMap = new HashMap<>();
-  private final String[] defaults = {
-          "forsen"
-  };
   @FXML
   private Label activeChannel;
   @FXML
@@ -65,15 +69,23 @@ public class ChatController {
   public void initialize() {
     // Generate TTS for each channel
     Thread.startVirtualThread(() -> {
-      for (String channel : defaults) {
-        // TODO: remove when config done
-        String channelPath = "/home/void/IdeaProjects/demo/tts/" + channel + ".wav";
-        String modelPath = "/home/void/IdeaProjects/demo/models/en_US-joe-medium.onnx";
-        String piperPath = "/home/void/.local/bin/piper";
+      String piperPath = Config.get().getTtsExecutablePath();
+      String modelPath = Config.get().getTtsModelPath();
+
+      if (piperPath.isBlank() || modelPath.isBlank()) {
+        System.out.println("TTS paths not configured, skipping generation");
+        return;
+      }
+
+      for (Config.ChannelConfig ch : Config.get().getChannels()) {
+        if (!ch.isTtsEnabled()) continue;
+
+        String channelPath = "./tts/" + ch.getName() + ".wav";
         File f = new File(channelPath);
-        if (!f.exists() && !f.isDirectory()) {
-          System.out.println("Generating TTS for " + channel);
-          TTSGenerator.generate(piperPath, modelPath, channelPath, channel + " is now streaming!");
+        if (!f.exists()) {
+          System.out.println("Generating TTS for " + ch.getName());
+          TTSGenerator.generate(piperPath, modelPath, channelPath,
+                  ch.getName() + " is now streaming!");
         }
       }
     });
@@ -112,11 +124,23 @@ public class ChatController {
             this::removeChannel,
             ch -> {
               ch.setFavorite(true);
+              // Save to config
+              Config.ChannelConfig cfg = Config.get().getChannel(ch.getName());
+              if (cfg != null) {
+                cfg.setFavorite(true);
+                Config.get().save();
+              }
               sortChannels();
               channelList.refresh();
             },
             ch -> {
               ch.setFavorite(false);
+              // Save to config
+              Config.ChannelConfig cfg = Config.get().getChannel(ch.getName());
+              if (cfg != null) {
+                cfg.setFavorite(false);
+                Config.get().save();
+              }
               sortChannels();
               channelList.refresh();
             }
@@ -138,6 +162,13 @@ public class ChatController {
   }
 
   private void loadInitialChannels() {
+    List<Config.ChannelConfig> configChannels = Config.get().getChannels();
+
+    if (configChannels.isEmpty()) {
+      addSystemMessage("-- NO CHANNELS CONFIGURED --", false);
+      return;
+    }
+
     Thread loaderThread = new Thread(() -> {
       try {
         Thread.sleep(200);
@@ -145,35 +176,39 @@ public class ChatController {
       }
 
       AtomicInteger count = new AtomicInteger();
-      // TODO: write proper config
-      // Replace your existing defaults array with this:
-//      String[] dummyChannels = java.util.stream.IntStream.rangeClosed(1, 25)
-//              .mapToObj(i -> "test_user_" + i)
-//              .toArray(String[]::new);
-//
-//      String[] realChannels = {"pajlada", "forsen", "brian6932"};
-//
-//      // Combine them into the final defaults array
-//      String[] defaults = java.util.stream.Stream.concat(
-//              java.util.Arrays.stream(dummyChannels),
-//              java.util.Arrays.stream(realChannels)
-//      ).toArray(String[]::new);
 
-      for (String name : defaults) {
+      for (Config.ChannelConfig ch : configChannels) {
         Platform.runLater(() -> {
-          addChannel(name);
+          String key = ch.getName().replaceFirst("^#", "").toLowerCase();
+
+          boolean exists = channelList.getItems().stream()
+                  .anyMatch(c -> c.getName().equals(key));
+          if (exists) return;
+
+          TwitchChannel tc = new TwitchChannel(key);
+          tc.setFavorite(ch.isFavorite()); // set favorite from config
+
+          channelList.getItems().add(tc);
+          twitchManager.joinChannel(key);
+
+          // Check live async
+          Thread.startVirtualThread(() -> {
+            boolean live = liveChecker.isLive(key);
+            if (live) Platform.runLater(() -> setChannelStatus(key, true));
+          });
+
           count.getAndIncrement();
         });
       }
 
       Platform.runLater(() -> {
+        sortChannels();
         addSystemMessage("-- " + count + " CHANNELS LOADED --", false);
       });
     });
     loaderThread.setDaemon(true);
     loaderThread.start();
   }
-
 
   /*
    * Adds a channel to the twitch manager and also check's the status and updates it
@@ -192,12 +227,18 @@ public class ChatController {
     channelList.getItems().add(ch);
     twitchManager.joinChannel(key);
 
+    // Save to config if new
+    if (Config.get().getChannel(key) == null) {
+      Config.get().upsertChannel(new Config.ChannelConfig(key));
+    }
+
     sortChannels();
   }
 
   private void removeChannel(TwitchChannel channel) {
     channelList.getItems().remove(channel);
     twitchManager.leaveChannel(channel.getName());
+    Config.get().removeChannel(channel.getName());
     if (activeChannelName.equals(channel.getName())) {
       activeChannelName = "";
       activeChannel.setText("No channel selected");
@@ -464,6 +505,35 @@ public class ChatController {
     if (viewerScheduler != null) {
       viewerScheduler.shutdownNow();
     }
+  }
+
+  @FXML
+  private void onOpenSettings() {
+    try {
+      FXMLLoader loader = new FXMLLoader(
+              getClass().getResource("/org/example/demo/settings/settings-view.fxml")
+      );
+      Stage stage = new Stage();
+      stage.setTitle("Settings");
+      stage.setScene(new Scene(loader.load(), 620, 560));
+      stage.initModality(Modality.APPLICATION_MODAL);
+      stage.getScene().getStylesheets().add(
+              getClass().getResource("/org/example/demo/style.css").toExternalForm()
+      );
+      stage.showAndWait();
+
+      // After settings closed, re-apply
+      applyConfig();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void applyConfig() {
+    liveChecker.setSoundConfig(
+            Config.get().getTtsExecutablePath(),
+            Config.get().getVolume()
+    );
   }
 
   // Utility class for bridging between js/java
