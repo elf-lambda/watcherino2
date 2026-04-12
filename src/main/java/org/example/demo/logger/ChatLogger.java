@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class ChatLogger {
@@ -31,12 +32,36 @@ public class ChatLogger {
   // channel name -> date the current file was opened for
   private final Map<String, LocalDate> openDates = new HashMap<>();
 
-  // Single thread — all file writes go through here, no synchronization needed
+  // Single thread -> all file writes go through here, no synchronization needed
   private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
     Thread t = new Thread(r, "chat-logger");
     t.setDaemon(true);
     return t;
   });
+  private final ScheduledExecutorService flusher = Executors.newSingleThreadScheduledExecutor(r -> {
+    Thread t = new Thread(r, "chat-logger-flusher");
+    t.setDaemon(true);
+    return t;
+  });
+
+  public ChatLogger() {
+    flusher.scheduleAtFixedRate(this::flushAll, 5, 5, TimeUnit.MINUTES);
+  }
+
+  private void flushAll() {
+    // Submit flush task to the logger thread so it doesn't race with writes
+    executor.submit(() -> {
+      for (Map.Entry<String, BufferedWriter> entry : writers.entrySet()) {
+        try {
+          entry.getValue().flush();
+          Debug.info("Flushed chat log for {}", entry.getKey());
+        } catch (IOException e) {
+          Debug.error("Failed to flush log for {}: {}", entry.getKey(), e.getMessage());
+        }
+      }
+      Debug.debug("Flushed {} channel logs", writers.size());
+    });
+  }
 
   public void log(TwitchMessage msg) {
     // Submit to logger thread
@@ -96,6 +121,7 @@ public class ChatLogger {
   }
 
   public void shutdown() {
+    flusher.shutdownNow();
     executor.submit(() -> {
       // Flush and close all open writers
       for (Map.Entry<String, BufferedWriter> entry : writers.entrySet()) {

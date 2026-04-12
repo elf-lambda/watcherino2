@@ -20,6 +20,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
 import org.example.demo.config.Config;
+import org.example.demo.emoji.EmojiDownloader;
+import org.example.demo.emoji.EmojiSubstituter;
 import org.example.demo.logger.ChatLogger;
 import org.example.demo.logger.Debug;
 import org.example.demo.settings.SettingsController;
@@ -119,6 +121,12 @@ public class ChatController {
       if (newState == Worker.State.SUCCEEDED) {
         injectBridge();
       }
+    });
+
+    Thread.startVirtualThread(() -> {
+      EmojiDownloader.downloadAll(() ->
+              Debug.info("All emojis ready")
+      );
     });
 
     twitchManager = new TwitchManager(this::onNewMessage);
@@ -344,27 +352,16 @@ public class ChatController {
     String time = message.timestamp.format(
             java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")
     );
-
-
     String safeMsg = escapeHtml(message.content);
     String safeUser = escapeHtml(message.username);
-
-    // Linkify after HTML escape, before emote substitution
-    String linked = linkify(safeMsg);
+    
+    String emojied = EmojiSubstituter.substitute(safeMsg);
+    String linked = linkify(emojied);
     String rendered = substituteEmotes(linked);
 
     String safeUser2 = escapeForTemplateLiteral(safeUser);
     String safeRendered = escapeForTemplateLiteral(rendered);
     String safeColor = escapeForTemplateLiteral(message.userColor);
-
-//    List<String> filterList = new Config().getFilters();
-//    for (String word : filterList) {
-//      if (safeMsg.contains(word)) {
-//        message.isHighlighted = true;
-////        AudioPlayer.playWav("./tts/ding.wav", 0.1f);
-//        break;
-//      }
-//    }
 
     Platform.runLater(() ->
             engine.executeScript(
@@ -420,7 +417,14 @@ public class ChatController {
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
-            .replace("'", "&#x27;");
+            .replace("'", "&#x27;")
+            .replace("\u034F", "")
+            .replace("\u2800", "")
+            .replace("\u200B", "")
+            .replace("\uFEFF", "")
+            .replace("\u00AD", "")
+            .replace("\u2060", "")
+            .replaceAll("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]", "");
   }
 
   private String escapeForTemplateLiteral(String s) {

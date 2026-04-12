@@ -23,7 +23,7 @@ html, body {
 body {
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+    font-family: 'Consolas', 'Monaco', monospace, 'Noto Color Emoji', sans-serif;
     font-size: 13px;
     display: flex;
     flex-direction: column;
@@ -43,6 +43,11 @@ body {
     margin-bottom: 3px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    font-family: 'Consolas', 'Monaco', 'Noto Color Emoji', monospace;
+}
+
+span {
+    font-family: 'Noto Color Emoji', monospace;
 }
 
 .system-msg {
