@@ -8,41 +8,52 @@ import java.nio.file.Paths;
 
 public class AudioPlayer {
 
-  /**
-   * Plays a WAV file with volume control
-   */
   public static void playWav(String filePath, float volume) {
     Path path = Paths.get(filePath);
-
     if (!Files.exists(path)) {
       System.err.println("Audio file not found: " + filePath);
       return;
     }
 
-    new Thread(() -> {
-      try (AudioInputStream inputStream = AudioSystem.getAudioInputStream(path.toFile())) {
+    try (AudioInputStream rawStream = AudioSystem.getAudioInputStream(path.toFile())) {
+      AudioFormat baseFormat = rawStream.getFormat();
 
-        Clip clip = AudioSystem.getClip();
-        clip.open(inputStream);
+      AudioFormat targetFormat = new AudioFormat(
+              AudioFormat.Encoding.PCM_SIGNED,
+              baseFormat.getSampleRate(),
+              16,
+              baseFormat.getChannels(),
+              baseFormat.getChannels() * 2,
+              baseFormat.getSampleRate(),
+              false
+      );
 
-        if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-          FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+      try (AudioInputStream pcmStream = AudioSystem.getAudioInputStream(targetFormat, rawStream)) {
+        DataLine.Info info = new DataLine.Info(SourceDataLine.class, targetFormat);
+        try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info)) {
+          line.open(targetFormat);
 
-          // Convert linear 0.0-1.0 to decibels
-          float dB = (float) (Math.log(volume <= 0 ? 0.0001 : volume) / Math.log(10.0) * 20.0);
-          gainControl.setValue(dB);
+          // Convert volume
+          if (line.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            FloatControl gain = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
+            float dB = (float) (Math.log(volume <= 0 ? 0.0001 : volume) / Math.log(10.0) * 20.0);
+            gain.setValue(Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), dB)));
+          }
+
+          line.start();
+
+          byte[] buffer = new byte[4096];
+          int bytesRead;
+          while ((bytesRead = pcmStream.read(buffer)) != -1) {
+            line.write(buffer, 0, bytesRead);
+          }
+
+          line.drain(); // blocks until all audio is played
+          line.stop();
         }
-
-        clip.start();
-
-        // Wait for the clip to finish before closing the thread
-        // (Otherwise the thread dies and the sound cuts off)
-        Thread.sleep(clip.getMicrosecondLength() / 1000);
-
-      } catch (UnsupportedAudioFileException | IOException | LineUnavailableException |
-               InterruptedException e) {
-        System.err.println("Error playing audio: " + e.getMessage());
       }
-    }).start();
+    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+      System.err.println("Error playing audio: " + e.getMessage());
+    }
   }
 }

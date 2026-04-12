@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.scene.control.ListView;
+import org.example.demo.tts.AudioPlayer;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,9 +14,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 
 public class TwitchLiveChecker {
@@ -25,16 +24,36 @@ public class TwitchLiveChecker {
   private final ListView<TwitchChannel> channelList;
   private final BiConsumer<String, Boolean> onStatusUpdate; // channel -> isLive
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  private final ConcurrentHashMap<String, Boolean> previousLiveState = new ConcurrentHashMap<>();
+  private final LinkedBlockingQueue<String> soundQueue = new LinkedBlockingQueue<>();
 
   public TwitchLiveChecker(ListView<TwitchChannel> channelList,
                            BiConsumer<String, Boolean> onStatusUpdate) {
     this.channelList = channelList;
     this.onStatusUpdate = onStatusUpdate;
+    startSoundWorker();
+  }
+
+  // Drains the queue one sound at a time
+  private void startSoundWorker() {
+    Thread worker = new Thread(() -> {
+      while (true) {
+        try {
+          String channel = soundQueue.take();
+          AudioPlayer.playWav("./tts/" + channel + ".wav", 0.1f);
+          System.out.println("🔔 " + channel + " went live!");
+        } catch (InterruptedException e) {
+          return;
+        }
+      }
+    }, "sound-worker");
+    worker.setDaemon(true);
+    worker.start();
   }
 
   public void start() {
     // Wait 3 seconds before start
-    scheduler.scheduleAtFixedRate(this::checkAll, 3, 30, TimeUnit.SECONDS);
+    scheduler.scheduleAtFixedRate(this::checkAll, 3, 60, TimeUnit.SECONDS);
   }
 
   public void stop() {
@@ -42,14 +61,24 @@ public class TwitchLiveChecker {
   }
 
   private void checkAll() {
-    List<TwitchChannel> channels = new ArrayList<>();
-    channels.addAll(channelList.getItems());
+    List<TwitchChannel> channels = new ArrayList<>(channelList.getItems());
 
-    for (TwitchChannel name : channels) {
+    for (TwitchChannel ch : channels) {
       Thread.startVirtualThread(() -> {
-        boolean live = isLive(name.getName());
-        if (name.isLive() != live) {
-          Platform.runLater(() -> onStatusUpdate.accept(name.getName(), live));
+        boolean live = isLive(ch.getName());
+
+        // Get previous state, default false
+        boolean wasPreviouslyLive = previousLiveState.getOrDefault(ch.getName(), false);
+
+        previousLiveState.put(ch.getName(), live);
+
+        if (live && !wasPreviouslyLive) {
+          soundQueue.offer(ch.getName());
+        }
+
+        // Notify UI if state changed
+        if (ch.isLive() != live) {
+          Platform.runLater(() -> onStatusUpdate.accept(ch.getName(), live));
         }
       });
     }
@@ -57,6 +86,8 @@ public class TwitchLiveChecker {
 
   public boolean isLive(String channel) {
     channel = channel.replaceFirst("^#", "");
+
+
     String query = "{\"query\":\"{ user(login:\\\"" + channel + "\\\") { stream { id } } }\"}";
 
     HttpRequest request = createGqlRequest(query);
@@ -68,7 +99,7 @@ public class TwitchLiveChecker {
       if (user == null) return false;
 
       boolean live = !user.get("stream").isJsonNull();
-      System.out.println(channel + " is live: " + live);
+//      System.out.println(channel + " is live: " + live);
       return live;
     } catch (Exception e) {
       System.out.println("Failed isLive with exception " + e);

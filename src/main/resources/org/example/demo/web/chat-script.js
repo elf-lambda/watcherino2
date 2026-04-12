@@ -50,9 +50,13 @@ function appendMessage(timestamp, username, userColor, renderedMessage, isSystem
 
     // Build underline color based on role priority: streamer > mod > vip
     let badge = '';
-    if (isStreamer) badge = `<span style="display:inline-block; width:7px; height:7px; background:rgba(231,76,60,0.6); margin-right:3px; vertical-align:middle;"></span>`;
-    else if (isMod) badge = `<span style="display:inline-block; width:7px; height:7px; background:rgba(46,204,113,0.6); margin-right:3px; vertical-align:middle;"></span>`;
-    else if (isVip) badge = `<span style="display:inline-block; width:7px; height:7px; background:rgba(155,89,182,0.6); margin-right:3px; vertical-align:middle;"></span>`;
+    if (isStreamer) {
+        badge = `<span style="display:inline-block; width:10px; height:10px; background:rgba(231,76,60,0.6); margin-right:3px; vertical-align:middle; position:relative; top:-1px;"></span>`;
+    } else if (isMod) {
+        badge = `<span style="display:inline-block; width:10px; height:10px; background:rgba(46,204,113,0.6); margin-right:3px; vertical-align:middle; position:relative; top:-1px;"></span>`;
+    } else if (isVip) {
+        badge = `<span style="display:inline-block; width:10px; height:10px; background:rgba(155,89,182,0.6); margin-right:3px; vertical-align:middle; position:relative; top:-1px;"></span>`;
+    }
 
     const userSpan = isSystem
         ? `<span class="username" style="color: ${userColor}; font-style: italic;">[SYSTEM]:</span> `

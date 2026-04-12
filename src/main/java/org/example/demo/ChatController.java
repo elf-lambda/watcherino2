@@ -15,9 +15,10 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
-import org.example.demo.tts.AudioPlayer;
+import org.example.demo.tts.TTSGenerator;
 import org.example.demo.twitch.*;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -32,7 +33,9 @@ public class ChatController {
 
   private final JavaBridge bridge = new JavaBridge();
   private final Map<String, String> emoteMap = new HashMap<>();
-
+  private final String[] defaults = {
+          "forsen"
+  };
   @FXML
   private Label activeChannel;
   @FXML
@@ -51,7 +54,6 @@ public class ChatController {
   private WebView chatWebView;
   @FXML
   private TextField newChannelInput;
-
   private WebEngine engine;
   private boolean isMinimized = false;
   private TwitchManager twitchManager;
@@ -61,7 +63,21 @@ public class ChatController {
 
   @FXML
   public void initialize() {
-    AudioPlayer.playWav("./tts/ding.wav", 0.1f);
+    // Generate TTS for each channel
+    Thread.startVirtualThread(() -> {
+      for (String channel : defaults) {
+        // TODO: remove when config done
+        String channelPath = "/home/void/IdeaProjects/demo/tts/" + channel + ".wav";
+        String modelPath = "/home/void/IdeaProjects/demo/models/en_US-joe-medium.onnx";
+        String piperPath = "/home/void/.local/bin/piper";
+        File f = new File(channelPath);
+        if (!f.exists() && !f.isDirectory()) {
+          System.out.println("Generating TTS for " + channel);
+          TTSGenerator.generate(piperPath, modelPath, channelPath, channel + " is now streaming!");
+        }
+      }
+    });
+
     engine = chatWebView.getEngine();
 
     chatWebView.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
@@ -142,9 +158,7 @@ public class ChatController {
 //              java.util.Arrays.stream(dummyChannels),
 //              java.util.Arrays.stream(realChannels)
 //      ).toArray(String[]::new);
-      String[] defaults = {
-              "forsen"
-      };
+
       for (String name : defaults) {
         Platform.runLater(() -> {
           addChannel(name);
