@@ -1,5 +1,7 @@
 package org.example.demo.twitch;
 
+import org.example.demo.logger.Debug;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,9 +37,9 @@ public class TwitchManager {
     connectionPool.submit(() -> {
       try {
         client.connect();
-        System.out.println("Joined channel: " + key);
+        Debug.info("Joined channel: " + key);
       } catch (IOException e) {
-        System.err.println("Failed to join " + key + ": " + e.getMessage());
+        Debug.error("Failed to join " + key + ": " + e.getMessage());
         clients.remove(key);
       }
     });

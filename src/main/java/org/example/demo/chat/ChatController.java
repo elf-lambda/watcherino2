@@ -20,6 +20,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
 import org.example.demo.config.Config;
+import org.example.demo.logger.ChatLogger;
+import org.example.demo.logger.Debug;
 import org.example.demo.settings.SettingsController;
 import org.example.demo.tts.TTSGenerator;
 import org.example.demo.twitch.*;
@@ -41,6 +43,7 @@ public class ChatController {
 
   private final JavaBridge bridge = new JavaBridge();
   private final Map<String, String> emoteMap = new HashMap<>();
+  private final ChatLogger chatLogger = new ChatLogger();
   @FXML
   private Label activeChannel;
   @FXML
@@ -74,7 +77,7 @@ public class ChatController {
       String modelPath = Config.get().getTtsModelPath();
 
       if (piperPath.isBlank() || modelPath.isBlank()) {
-        System.out.println("TTS paths not configured, skipping generation");
+        Debug.info("TTS paths not configured, skipping generation");
         return;
       }
 
@@ -84,7 +87,7 @@ public class ChatController {
         String channelPath = "./tts/" + ch.getName() + ".wav";
         File f = new File(channelPath);
         if (!f.exists()) {
-          System.out.println("Generating TTS for " + ch.getName());
+          Debug.info("Generating TTS for " + ch.getName());
           TTSGenerator.generate(piperPath, modelPath, channelPath,
                   ch.getName() + " is now streaming!");
         }
@@ -317,7 +320,7 @@ public class ChatController {
         });
 
       } catch (Exception e) {
-        System.err.println("Error updating viewer count: " + e.getMessage());
+        Debug.error("Error updating viewer count: " + e.getMessage());
       }
 
     }, 0, 1, TimeUnit.MINUTES);
@@ -325,6 +328,7 @@ public class ChatController {
 
 
   private void onNewMessage(TwitchMessage msg) {
+    chatLogger.log(msg);
     String msgChannel = msg.channel.replace("#", "").toLowerCase();
     if (msgChannel.equals(activeChannelName)) {
       addMessage(msg);
@@ -429,7 +433,7 @@ public class ChatController {
   private String toBase64DataUri(String resourcePath) {
     try (var is = getClass().getResourceAsStream(resourcePath)) {
       if (is == null) {
-        System.err.println("Resource not found: " + resourcePath);
+        Debug.error("Resource not found: " + resourcePath);
         return "";
       }
       byte[] bytes = is.readAllBytes();
@@ -438,6 +442,7 @@ public class ChatController {
       return "data:" + mime + ";base64," + b64;
     } catch (Exception e) {
       e.printStackTrace();
+      Debug.error(e.getMessage());
       return "";
     }
   }
@@ -513,6 +518,7 @@ public class ChatController {
   }
 
   public void shutdown() {
+    chatLogger.shutdown();
     liveChecker.stop();
     twitchManager.stopAll();
     if (viewerScheduler != null) {
@@ -539,6 +545,7 @@ public class ChatController {
       applyConfig();
     } catch (IOException e) {
       e.printStackTrace();
+      Debug.error(e.getMessage());
     }
   }
 
@@ -562,7 +569,7 @@ public class ChatController {
               new ProcessBuilder("xdg-open", payload)
                       .start();
             } catch (Exception e) {
-              System.err.println("Failed to open link: " + payload);
+              Debug.error("Failed to open link: " + payload);
             }
           }
           case "copy" -> {

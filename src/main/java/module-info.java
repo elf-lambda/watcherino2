@@ -6,6 +6,7 @@ module org.example.demo {
   requires java.net.http;
   requires com.google.gson;
   requires java.desktop;
+  requires org.slf4j;
 
 
   opens org.example.demo to javafx.fxml;

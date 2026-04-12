@@ -1,5 +1,7 @@
 package org.example.demo.tts;
 
+import org.example.demo.logger.Debug;
+
 import java.io.IOException;
 
 public class TTSGenerator {
@@ -24,17 +26,18 @@ public class TTSGenerator {
 
       try (var err = process.getErrorStream()) {
         String errorMsg = new String(err.readAllBytes());
-        if (!errorMsg.isEmpty()) System.err.println("Piper says: " + errorMsg);
+        if (!errorMsg.isEmpty()) Debug.error("Piper says: " + errorMsg);
       }
 
       int exitCode = process.waitFor();
       if (exitCode == 0) {
-        System.out.println("Success! Saved to: " + finalOutputFile);
+        Debug.info("Success! Saved to: " + finalOutputFile);
       } else {
-        System.err.println("Piper failed with exit code: " + exitCode);
+        Debug.error("Piper failed with exit code: " + exitCode);
       }
 
     } catch (IOException | InterruptedException e) {
+      Debug.error(e.getMessage());
       e.printStackTrace();
     }
   }

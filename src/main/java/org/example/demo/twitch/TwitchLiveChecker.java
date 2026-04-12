@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.scene.control.ListView;
+import org.example.demo.logger.Debug;
 import org.example.demo.tts.AudioPlayer;
 
 import java.net.URI;
@@ -41,7 +42,7 @@ public class TwitchLiveChecker {
         try {
           String channel = soundQueue.take();
           AudioPlayer.playWav("./tts/" + channel + ".wav", 0.1f);
-          System.out.println("🔔 " + channel + " went live!");
+          Debug.info("> " + channel + " went live!");
         } catch (InterruptedException e) {
           return;
         }
@@ -102,7 +103,7 @@ public class TwitchLiveChecker {
 //      System.out.println(channel + " is live: " + live);
       return live;
     } catch (Exception e) {
-      System.out.println("Failed isLive with exception " + e);
+      Debug.error("Failed isLive with exception " + e);
       return false;
     }
   }
@@ -125,7 +126,7 @@ public class TwitchLiveChecker {
 
       return user.getAsJsonObject("stream").get("viewersCount").getAsInt();
     } catch (Exception e) {
-      System.err.println("Failed to get viewers for " + channel + ": " + e.getMessage());
+      Debug.error("Failed to get viewers for " + channel + ": " + e.getMessage());
       return 0;
     }
   }

@@ -2,6 +2,7 @@ package org.example.demo.twitch;
 
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import org.example.demo.logger.Debug;
 import org.example.demo.settings.SettingsController;
 import org.example.demo.tts.AudioPlayer;
 
@@ -65,7 +66,7 @@ public class TwitchClient {
     sourceList.addListener((ListChangeListener<String>) c -> {
       filterList.clear();
       filterList.addAll(sourceList);
-      System.out.println("Filters synchronized: " + filterList);
+      Debug.info("Filters synchronized: " + filterList);
     });
   }
 
@@ -100,7 +101,7 @@ public class TwitchClient {
     }, "twitch-ping-" + channel);
     pingThread.setDaemon(true);
     pingThread.start();
-    System.out.println("Ping started for " + channel);
+    Debug.info("Ping started for " + channel);
   }
 
   public void connect() throws IOException {
@@ -140,12 +141,12 @@ public class TwitchClient {
       } catch (java.net.SocketTimeoutException e) {
         if (!running) return;
         connected = false;
-        System.err.println("Socket timeout on " + channel + ", reconnecting...");
+        Debug.error("Socket timeout on " + channel + ", reconnecting...");
         reconnect();
       } catch (IOException e) {
         if (!running) return;
         connected = false;
-        System.err.println("Connection lost on " + channel + ", reconnecting...");
+        Debug.error("Connection lost on " + channel + ", reconnecting...");
         reconnect();
       }
     }
@@ -162,11 +163,11 @@ public class TwitchClient {
         out.println("NICK " + username);
         out.println("JOIN " + channel);
         connected = true;
-        System.out.println("Reconnected to " + channel);
+        Debug.info("Reconnected to " + channel);
         startPingThread(); // <-- restart ping for this channel
         return;
       } catch (Exception e) {
-        System.err.println("Reconnect failed for " + channel + ", retrying...");
+        Debug.error("Reconnect failed for " + channel + ", retrying...");
       }
     }
   }
@@ -378,7 +379,7 @@ public class TwitchClient {
       if (listenerThread != null) listenerThread.join(2000);
     } catch (InterruptedException ignored) {
     }
-    System.out.println("Stopped " + channel);
+    Debug.info("Stopped " + channel);
   }
 
   public boolean isConnected() {

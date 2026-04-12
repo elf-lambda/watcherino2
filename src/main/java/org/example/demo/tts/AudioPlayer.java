@@ -1,5 +1,7 @@
 package org.example.demo.tts;
 
+import org.example.demo.logger.Debug;
+
 import javax.sound.sampled.*;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,7 +13,7 @@ public class AudioPlayer {
   public static void playWav(String filePath, float volume) {
     Path path = Paths.get(filePath);
     if (!Files.exists(path)) {
-      System.err.println("Audio file not found: " + filePath);
+      Debug.error("Audio file not found: " + filePath);
       return;
     }
 
@@ -53,7 +55,7 @@ public class AudioPlayer {
         }
       }
     } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
-      System.err.println("Error playing audio: " + e.getMessage());
+      Debug.error("Error playing audio: " + e.getMessage());
     }
   }
 }

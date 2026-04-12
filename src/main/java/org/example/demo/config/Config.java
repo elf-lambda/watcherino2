@@ -2,6 +2,7 @@ package org.example.demo.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.example.demo.logger.Debug;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -119,7 +120,7 @@ public class Config {
         GSON.toJson(data, w);
       }
     } catch (IOException e) {
-      System.err.println("Failed to save config: " + e.getMessage());
+      Debug.error("Failed to save config: \"" + e.getMessage());
     }
   }
 
@@ -135,7 +136,7 @@ public class Config {
         this.filters = data.filters != null ? data.filters : new ArrayList<>();
       }
     } catch (IOException e) {
-      System.err.println("Failed to load config: " + e.getMessage());
+      Debug.error("Failed to load config: " + e.getMessage());
     }
   }
   // Channel config model
