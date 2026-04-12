@@ -20,6 +20,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import netscape.javascript.JSObject;
 import org.example.demo.config.Config;
+import org.example.demo.settings.SettingsController;
 import org.example.demo.tts.TTSGenerator;
 import org.example.demo.twitch.*;
 
@@ -151,6 +152,7 @@ public class ChatController {
               if (newVal != null) switchChannel(newVal);
             }
     );
+    SettingsController.filterWords.addAll(Config.get().getFilters());
 
     // Thread TODO: rewrite these
     liveChecker.start();
@@ -339,6 +341,7 @@ public class ChatController {
             java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")
     );
 
+
     String safeMsg = escapeHtml(message.content);
     String safeUser = escapeHtml(message.username);
 
@@ -350,14 +353,24 @@ public class ChatController {
     String safeRendered = escapeForTemplateLiteral(rendered);
     String safeColor = escapeForTemplateLiteral(message.userColor);
 
+//    List<String> filterList = new Config().getFilters();
+//    for (String word : filterList) {
+//      if (safeMsg.contains(word)) {
+//        message.isHighlighted = true;
+////        AudioPlayer.playWav("./tts/ding.wav", 0.1f);
+//        break;
+//      }
+//    }
+
     Platform.runLater(() ->
             engine.executeScript(
-                    String.format("appendMessage(`%s`, `%s`, `%s`, `%s`, %b, %b, %b, %b)",
+                    String.format("appendMessage(`%s`, `%s`, `%s`, `%s`, %b, %b, %b, %b, %b)",
                             time, safeUser2, safeColor, safeRendered,
                             message.isSystemMessage,
                             message.isModerator,
                             message.isVIP,
-                            message.isStreamer)
+                            message.isStreamer,
+                            message.isHighlighted)
             )
     );
   }

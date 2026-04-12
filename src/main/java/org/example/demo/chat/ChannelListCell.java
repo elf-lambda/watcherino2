@@ -124,35 +124,36 @@ public class ChannelListCell extends ListCell<TwitchChannel> {
     } else {
       nameLabel.setText(channel.getName());
 
-      statusIndicator.setFill(channel.isLive()
-              ? javafx.scene.paint.Color.web("#27ae60")
-              : javafx.scene.paint.Color.RED
-      );
-
-      activityIndicator.setOpacity(channel.isFavorite() ? 1.0 : 0.0);
+      // TODO fix/implement
+      String bgColor = channel.hasHighlightAlert() ? "rgba(231, 76, 60, 0.4)" : "transparent";
 
       setGraphic(container);
       setText(null);
-// updateItem cell border color
-      setStyle("""
-                  -fx-background-color: transparent;
+
+      setStyle(String.format("""
+                  -fx-background-color: %s;
                   -fx-border-color: #2a2a2a;
                   -fx-border-width: 0 0 1 0;
                   -fx-padding: 0;
-              """);
+              """, bgColor));
+
+      // Ensure indicators still work
+      statusIndicator.setFill(channel.isLive() ? javafx.scene.paint.Color.web("#27ae60") :
+              javafx.scene.paint.Color.RED);
+      activityIndicator.setOpacity(channel.isFavorite() ? 1.0 : 0.0);
     }
   }
 
-//  public void flashActivity() {
-//    activityIndicator.setOpacity(1.0);
-//    new javafx.animation.Timeline(
-//            new javafx.animation.KeyFrame(
-//                    javafx.util.Duration.millis(400),
-//                    e -> {
-//                      TwitchChannel ch = getItem();
-//                      activityIndicator.setOpacity(ch != null && ch.isFavorite() ? 1.0 : 0.0);
-//                    }
-//            )
-//    ).play();
-//  }
+  public void flashActivity() {
+    activityIndicator.setOpacity(1.0);
+    new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(
+                    javafx.util.Duration.millis(400),
+                    e -> {
+                      TwitchChannel ch = getItem();
+                      activityIndicator.setOpacity(ch != null && ch.isFavorite() ? 1.0 : 0.0);
+                    }
+            )
+    ).play();
+  }
 }

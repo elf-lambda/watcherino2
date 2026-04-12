@@ -19,11 +19,11 @@ import java.util.ArrayList;
 
 public class SettingsController {
 
+  public static final ObservableList<String> filterWords = FXCollections.observableArrayList();
   private final ObservableList<Config.ChannelConfig> allChannels =
           FXCollections.observableArrayList();
   private final FilteredList<Config.ChannelConfig> filteredChannels =
           new FilteredList<>(allChannels, p -> true);
-  private final ObservableList<String> filterWords = FXCollections.observableArrayList();
   @FXML
   private Slider volumeSlider;
   @FXML
@@ -68,6 +68,7 @@ public class SettingsController {
     channelListView.setCellFactory(lv -> new ChannelSettingsCell());
 
     // Filters
+    filterWords.clear();
     filterWords.addAll(Config.get().getFilters());
     filterListView.setItems(filterWords);
     filterListView.setCellFactory(lv -> new FilterWordCell());

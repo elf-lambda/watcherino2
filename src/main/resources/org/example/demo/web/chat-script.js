@@ -44,9 +44,10 @@ function appendSystemMessage(renderedMessage, isSystem) {
     }
 }
 
-function appendMessage(timestamp, username, userColor, renderedMessage, isSystem, isMod, isVip, isStreamer) {
+function appendMessage(timestamp, username, userColor, renderedMessage, isSystem, isMod, isVip, isStreamer, isHighlighted) {
     const div = document.createElement('div');
     div.className = isSystem ? 'msg system-msg' : 'msg';
+    div.className += isHighlighted ? ' system-msg' : '';
 
     // Build underline color based on role priority: streamer > mod > vip
     let badge = '';

@@ -36,7 +36,7 @@ public class Config {
   private List<ChannelConfig> channels = new ArrayList<>();
   private List<String> filters = new ArrayList<>();
 
-  private Config() {
+  public Config() {
     load();
   }
 

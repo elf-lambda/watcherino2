@@ -1,11 +1,17 @@
 package org.example.demo.twitch;
 
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import org.example.demo.settings.SettingsController;
+import org.example.demo.tts.AudioPlayer;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
@@ -32,6 +38,7 @@ public class TwitchClient {
   private final String username;
   private final TwitchRingBuffer messageBuffer = new TwitchRingBuffer(BUFFER_SIZE);
   private final BlockingQueue<TwitchMessage> messageQueue = new LinkedBlockingQueue<>(100);
+  private final List<String> filterList = new java.util.concurrent.CopyOnWriteArrayList<String>();
   private volatile boolean pingRunning = false;
   private Thread pingThread;
   private Socket socket;
@@ -45,6 +52,21 @@ public class TwitchClient {
   public TwitchClient(String channel) {
     this.channel = channel.startsWith("#") ? channel : "#" + channel;
     this.username = "justinfan" + (1000 + new Random().nextInt(8999));
+//    SettingsController.filterWords.addAll(Config.get().getFilters());
+    setFilters(SettingsController.filterWords);
+  }
+
+  public void setFilters(ObservableList<String> sourceList) {
+    // 1. Initial sync
+    filterList.clear();
+    filterList.addAll(sourceList);
+
+    // 2. Watch for future changes (adding/removing words in UI)
+    sourceList.addListener((ListChangeListener<String>) c -> {
+      filterList.clear();
+      filterList.addAll(sourceList);
+      System.out.println("Filters synchronized: " + filterList);
+    });
   }
 
   public void setOnMessage(Consumer<TwitchMessage> onMessage) {
@@ -215,6 +237,20 @@ public class TwitchClient {
     msg.isModerator = badges.contains("moderator");
     msg.isVIP = badges.contains("vip");
 
+    // TODO: Rework... might be too slow
+    String lowerContent = content.toLowerCase();
+
+    for (String word : filterList) {
+      if (word.length() > lowerContent.length()) continue;
+
+      if (lowerContent.contains(word.toLowerCase())) {
+        msg.isHighlighted = true;
+        Thread.startVirtualThread(() -> {
+          AudioPlayer.playWav("./tts/ding.wav", 0.1f);
+        });
+        break;
+      }
+    }
     return msg;
   }
 

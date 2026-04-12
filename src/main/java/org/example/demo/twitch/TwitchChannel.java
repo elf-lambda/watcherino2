@@ -2,6 +2,7 @@ package org.example.demo.twitch;
 
 public class TwitchChannel {
   private final String name;
+  private boolean hasHighlightAlert = false;
   private boolean live;
   private boolean favorite;
 
@@ -9,6 +10,14 @@ public class TwitchChannel {
     this.name = name.replaceFirst("^#", "").toLowerCase();
     this.live = false;
     this.favorite = false;
+  }
+
+  public boolean hasHighlightAlert() {
+    return hasHighlightAlert;
+  }
+
+  public void setHighlightAlert(boolean alert) {
+    this.hasHighlightAlert = alert;
   }
 
   public String getName() {

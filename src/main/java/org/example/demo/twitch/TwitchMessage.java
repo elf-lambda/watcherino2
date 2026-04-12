@@ -14,6 +14,7 @@ public class TwitchMessage {
   public boolean isModerator;
   public boolean isVIP;
   public boolean isStreamer;
+  public boolean isHighlighted;
 
   public TwitchMessage(String username, String content, String channel,
                        String userColor, Map<String, String> tags, boolean isSystemMessage) {
