@@ -1,4 +1,4 @@
-package org.example.demo;
+package org.example.demo.chat;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;

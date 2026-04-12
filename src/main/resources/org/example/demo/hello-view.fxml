@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.web.WebView?>
 <HBox xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="org.example.demo.ChatController"
+      fx:controller="org.example.demo.chat.ChatController"
       stylesheets="@style.css"
       styleClass="app-container"
       spacing="0">
