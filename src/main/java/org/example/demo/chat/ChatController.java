@@ -22,6 +22,7 @@ import netscape.javascript.JSObject;
 import org.example.demo.config.Config;
 import org.example.demo.emoji.EmojiDownloader;
 import org.example.demo.emoji.EmojiSubstituter;
+import org.example.demo.emotes.TwitchEmotesHandler;
 import org.example.demo.logger.ChatLogger;
 import org.example.demo.logger.Debug;
 import org.example.demo.settings.SettingsController;
@@ -30,6 +31,7 @@ import org.example.demo.twitch.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -260,7 +262,7 @@ public class ChatController {
   }
 
   /*
-   * Switch channel and load last 512 message (or less) from the ring buffer
+   * Switch channel and load last X message (or less) from the ring buffer
    * This only gets called once on switch click
    */
   private void switchChannel(TwitchChannel channel) {
@@ -271,7 +273,7 @@ public class ChatController {
 
     TwitchRingBuffer buffer = twitchManager.getBuffer(activeChannelName);
     if (buffer != null) {
-      buffer.getLast(512).forEach(this::addMessage);
+      buffer.getLast(128).forEach(this::addMessage);
     }
     int viewers = liveChecker.getViewers(activeChannelName);
     viewerCount.setText(String.valueOf(viewers));
@@ -352,21 +354,21 @@ public class ChatController {
     String time = message.timestamp.format(
             java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")
     );
-    String safeMsg = escapeHtml(message.content);
-    String safeUser = escapeHtml(message.username);
+
+    String withTwitchEmotes = substituteTwitchEmotes(message);
     
-    String emojied = EmojiSubstituter.substitute(safeMsg);
+    String emojied = EmojiSubstituter.substitute(withTwitchEmotes);
     String linked = linkify(emojied);
     String rendered = substituteEmotes(linked);
 
-    String safeUser2 = escapeForTemplateLiteral(safeUser);
+    String safeUser = escapeForTemplateLiteral(escapeHtml(message.username));
     String safeRendered = escapeForTemplateLiteral(rendered);
     String safeColor = escapeForTemplateLiteral(message.userColor);
 
     Platform.runLater(() ->
             engine.executeScript(
                     String.format("appendMessage(`%s`, `%s`, `%s`, `%s`, %b, %b, %b, %b, %b)",
-                            time, safeUser2, safeColor, safeRendered,
+                            time, safeUser, safeColor, safeRendered,
                             message.isSystemMessage,
                             message.isModerator,
                             message.isVIP,
@@ -374,6 +376,48 @@ public class ChatController {
                             message.isHighlighted)
             )
     );
+  }
+
+  private String substituteTwitchEmotes(TwitchMessage message) {
+    String emoteTag = message.tags.getOrDefault("emotes", "");
+    if (emoteTag.isBlank()) return escapeHtml(message.content);
+
+    Map<String, Path> paths = TwitchEmotesHandler.processEmoteTag(emoteTag);
+    List<TwitchEmotesHandler.EmoteOccurrence> occurrences =
+            TwitchEmotesHandler.parseOccurrences(emoteTag, paths);
+
+    if (occurrences.isEmpty()) return escapeHtml(message.content);
+
+    int[] codePoints = message.content.codePoints().toArray();
+    StringBuilder result = new StringBuilder();
+    int cursor = 0;
+
+    for (var occ : occurrences) {
+      // Escape and append text before this emote
+      StringBuilder textBefore = new StringBuilder();
+      for (int i = cursor; i < occ.start() && i < codePoints.length; i++) {
+        textBefore.appendCodePoint(codePoints[i]);
+      }
+      result.append(escapeHtml(textBefore.toString()));
+
+      String url = occ.localPath().toUri().toString();
+      String altText = "emote"; // TODO: rework
+      result.append("<img src='").append(url)
+              .append("' alt='").append(altText)
+              .append("' title='").append(altText)
+              .append("' style='width:28px;height:28px;vertical-align:middle;'>");
+
+      cursor = occ.end() + 1;
+    }
+
+    // Escape and append remaining text
+    StringBuilder remaining = new StringBuilder();
+    for (int i = cursor; i < codePoints.length; i++) {
+      remaining.appendCodePoint(codePoints[i]);
+    }
+    result.append(escapeHtml(remaining.toString()));
+
+    return result.toString();
   }
 
   /**
@@ -395,6 +439,8 @@ public class ChatController {
   }
 
   private String substituteEmotes(String message) {
+    // TODO: Rework how this works for third party emotes
+    // don't want a third party emote named "img" to replace the <img tags>
     for (Map.Entry<String, String> entry : emoteMap.entrySet()) {
       String word = entry.getKey();
       String dataUri = entry.getValue();
