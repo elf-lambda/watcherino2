@@ -2,6 +2,7 @@ package org.example.demo.twitch;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import org.example.demo.emotes.BTTVEmotesDownloader;
 import org.example.demo.emotes.SEVENTVEmotesDownloader;
 import org.example.demo.logger.Debug;
 
@@ -83,6 +84,8 @@ public class TwitchManager {
         if (twitchId != null) {
           SEVENTVEmotesDownloader sevenTV = new SEVENTVEmotesDownloader();
           sevenTV.fetchChannel(twitchId, key);
+          BTTVEmotesDownloader bttv = new BTTVEmotesDownloader();
+          bttv.fetchChannel(twitchId, key);
         } else {
           Debug.warn("Could not fetch ID for {}, 7TV emotes might not load.", key);
         }

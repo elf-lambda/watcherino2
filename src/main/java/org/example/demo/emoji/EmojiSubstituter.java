@@ -76,8 +76,6 @@ public class EmojiSubstituter {
     if (Files.exists(localFile)) {
       url = localFile.toUri().toString();
     } else {
-      // Download async — for now return null so raw chars show
-      // Download will cache it for next time
       Thread.startVirtualThread(() -> EmojiDownloader.getEmojiUrl(
               significant.isEmpty() ? sequence.get(0) : significant.get(0)
       ));
@@ -90,15 +88,9 @@ public class EmojiSubstituter {
   }
 
   private static boolean isEmojiStart(int cp) {
-    return (cp >= 0x1F300 && cp <= 0x1FAFF)
-            || (cp >= 0x2600 && cp <= 0x27BF)
-            || (cp >= 0x1F900 && cp <= 0x1F9FF)
-            || (cp >= 0x231A && cp <= 0x23FF)
-            || (cp >= 0x25AA && cp <= 0x25FE)
-            || (cp >= 0x2700 && cp <= 0x27BF)
-            || (cp >= 0x1F1E0 && cp <= 0x1F1FF) // regional indicators (flags)
-            || cp == 0x00A9 || cp == 0x00AE      // © ®
-            || cp == 0x203C || cp == 0x2049;     // ‼ ⁉
+    return Character.getType(cp) == Character.SURROGATE ||
+            Character.getType(cp) == Character.OTHER_SYMBOL ||
+            (cp >= 0x2600 && cp <= 0x27BF);
   }
 
   private static boolean isContinuation(int cp) {

@@ -22,10 +22,7 @@ import netscape.javascript.JSObject;
 import org.example.demo.config.Config;
 import org.example.demo.emoji.EmojiDownloader;
 import org.example.demo.emoji.EmojiSubstituter;
-import org.example.demo.emotes.EmoteInfo;
-import org.example.demo.emotes.EmoteRegistry;
-import org.example.demo.emotes.SEVENTVEmotesDownloader;
-import org.example.demo.emotes.TwitchEmotesHandler;
+import org.example.demo.emotes.*;
 import org.example.demo.logger.ChatLogger;
 import org.example.demo.logger.Debug;
 import org.example.demo.settings.SettingsController;
@@ -123,6 +120,8 @@ public class ChatController {
 
     SEVENTVEmotesDownloader sevenTV = new SEVENTVEmotesDownloader();
     sevenTV.fetchGlobal();
+    BTTVEmotesDownloader bttv = new BTTVEmotesDownloader();
+    bttv.fetchGlobal();
 
     java.net.URL chatUrl = getClass().getResource("/org/example/demo/web/chat.html");
     engine.load(chatUrl.toExternalForm());
@@ -385,16 +384,20 @@ public class ChatController {
       }
       result.append(escapeHtml(textBefore.toString()));
 
+      StringBuilder emoteTextBuilder = new StringBuilder();
+      for (int i = occ.start(); i <= occ.end() && i < codePoints.length; i++) {
+        emoteTextBuilder.appendCodePoint(codePoints[i]);
+      }
+      String emoteName = escapeHtml(emoteTextBuilder.toString());
+
       String url = occ.localPath().toUri().toString();
-      String altText = "emote";
       result.append("<img src='").append(url)
-              .append("' alt='").append(altText)
-              .append("' title='").append(altText)
-              .append("' style='width:28px;height:28px;vertical-align:middle;'>");
+              .append("' alt='").append(emoteName)
+              .append("' title='").append(emoteName)
+              .append("' style='height:28px;vertical-align:middle;'>");
 
       cursor = occ.end() + 1;
     }
-
     StringBuilder remaining = new StringBuilder();
     for (int i = cursor; i < codePoints.length; i++) {
       remaining.appendCodePoint(codePoints[i]);
@@ -413,10 +416,11 @@ public class ChatController {
   }
 
   /**
-   * Safely substitutes native and 7TV emotes without breaking existing HTML tags.
+   * Safely substitutes native and 7TV/BTTV/FFZ emotes without breaking existing HTML tags.
    */
   private String substituteEmotes(String message) {
     Map<String, String> sevenTvEmotes = getSevenTVEmotesForActiveChannel();
+    Map<String, String> BTTVEmotes = getBTTVEmotesForActiveChannel();
 
     // This regex catches either an existing HTML tag (Group 1)
     // OR a standalone word (Group 2)
@@ -437,8 +441,13 @@ public class ChatController {
           String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
                   " style='vertical-align:middle;'>", dataUri, word, word);
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
-        } else if (sevenTvEmotes != null && sevenTvEmotes.containsKey(word)) {
+        } else if (sevenTvEmotes.containsKey(word)) {
           String emotePath = sevenTvEmotes.get(word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
+                  " style='vertical-align:middle;'>", emotePath, word, word);
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
+        } else if (BTTVEmotes.containsKey(word)) {
+          String emotePath = BTTVEmotes.get(word);
           String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
                   " style='vertical-align:middle;'>", emotePath, word, word);
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
@@ -453,16 +462,34 @@ public class ChatController {
   }
 
   /**
-   * Helper to load 7TV emotes mapped specifically to the active channel
+   * Helper to load 7TV emotes for the active channel
    */
   private Map<String, String> getSevenTVEmotesForActiveChannel() {
     List<EmoteInfo> infoList = EmoteRegistry.get().getAllForChannel(activeChannelName);
 
     Map<String, String> emoteMap = new HashMap<>();
     for (EmoteInfo info : infoList) {
-      emoteMap.put(info.name(), info.localPath().toUri().toString());
+      // ONLY add if the provider is SEVENTV
+      if (info.provider() == EmoteProvider.SEVENTV) {
+        emoteMap.put(info.name(), info.localPath().toUri().toString());
+      }
     }
+    return emoteMap;
+  }
 
+  /**
+   * Helper to load BTTV emotes for the active channel
+   */
+  private Map<String, String> getBTTVEmotesForActiveChannel() {
+    List<EmoteInfo> infoList = EmoteRegistry.get().getAllForChannel(activeChannelName);
+
+    Map<String, String> emoteMap = new HashMap<>();
+    for (EmoteInfo info : infoList) {
+      // ONLY add if the provider is BTTV
+      if (info.provider() == EmoteProvider.BTTV) {
+        emoteMap.put(info.name(), info.localPath().toUri().toString());
+      }
+    }
     return emoteMap;
   }
 
