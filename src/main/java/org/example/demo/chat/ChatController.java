@@ -22,6 +22,9 @@ import netscape.javascript.JSObject;
 import org.example.demo.config.Config;
 import org.example.demo.emoji.EmojiDownloader;
 import org.example.demo.emoji.EmojiSubstituter;
+import org.example.demo.emotes.EmoteInfo;
+import org.example.demo.emotes.EmoteRegistry;
+import org.example.demo.emotes.SEVENTVEmotesDownloader;
 import org.example.demo.emotes.TwitchEmotesHandler;
 import org.example.demo.logger.ChatLogger;
 import org.example.demo.logger.Debug;
@@ -39,15 +42,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChatController {
 
-  // Useless for now, only used for minimiaze/maximize list panel
+  // Useless for now, only used for minimize/maximize list panel
   private static final double PANEL_WIDTH = 170.0;
 
   private final JavaBridge bridge = new JavaBridge();
   private final Map<String, String> emoteMap = new HashMap<>();
   private final ChatLogger chatLogger = new ChatLogger();
+
   @FXML
   private Label activeChannel;
   @FXML
@@ -66,9 +72,10 @@ public class ChatController {
   private WebView chatWebView;
   @FXML
   private TextField newChannelInput;
+
   private WebEngine engine;
   private boolean isMinimized = false;
-  private TwitchManager twitchManager;
+  private TwitchManager twitchManager; // THE OS THREAD DESTROYER'S keeper
   private TwitchLiveChecker liveChecker;
   private String activeChannelName = "";
   private ScheduledExecutorService viewerScheduler;
@@ -114,8 +121,8 @@ public class ChatController {
       }
     });
 
-    // TODO: rework
-    loadEmotes();
+    SEVENTVEmotesDownloader sevenTV = new SEVENTVEmotesDownloader();
+    sevenTV.fetchGlobal();
 
     java.net.URL chatUrl = getClass().getResource("/org/example/demo/web/chat.html");
     engine.load(chatUrl.toExternalForm());
@@ -126,9 +133,7 @@ public class ChatController {
     });
 
     Thread.startVirtualThread(() -> {
-      EmojiDownloader.downloadAll(() ->
-              Debug.info("All emojis ready")
-      );
+      EmojiDownloader.downloadAll(() -> Debug.info("All emojis ready"));
     });
 
     twitchManager = new TwitchManager(this::onNewMessage);
@@ -138,7 +143,6 @@ public class ChatController {
             this::removeChannel,
             ch -> {
               ch.setFavorite(true);
-              // Save to config
               Config.ChannelConfig cfg = Config.get().getChannel(ch.getName());
               if (cfg != null) {
                 cfg.setFavorite(true);
@@ -149,7 +153,6 @@ public class ChatController {
             },
             ch -> {
               ch.setFavorite(false);
-              // Save to config
               Config.ChannelConfig cfg = Config.get().getChannel(ch.getName());
               if (cfg != null) {
                 cfg.setFavorite(false);
@@ -167,13 +170,10 @@ public class ChatController {
     );
     SettingsController.filterWords.addAll(Config.get().getFilters());
 
-    // Thread TODO: rewrite these
     liveChecker.start();
     startViewerUpdater();
 
-    Platform.runLater(() -> {
-      loadInitialChannels();
-    });
+    Platform.runLater(this::loadInitialChannels);
   }
 
   private void loadInitialChannels() {
@@ -201,12 +201,11 @@ public class ChatController {
           if (exists) return;
 
           TwitchChannel tc = new TwitchChannel(key);
-          tc.setFavorite(ch.isFavorite()); // set favorite from config
+          tc.setFavorite(ch.isFavorite());
 
           channelList.getItems().add(tc);
           twitchManager.joinChannel(key);
 
-          // Check live async
           Thread.startVirtualThread(() -> {
             boolean live = liveChecker.isLive(key);
             if (live) Platform.runLater(() -> setChannelStatus(key, true));
@@ -225,24 +224,16 @@ public class ChatController {
     loaderThread.start();
   }
 
-  /*
-   * Adds a channel to the twitch manager and also check's the status and updates it
-   */
   private void addChannel(String name) {
     String key = name.replaceFirst("^#", "").toLowerCase();
-    // Don't add duplicates
     boolean exists = channelList.getItems().stream()
             .anyMatch(c -> c.getName().equals(key));
     if (exists) return;
 
     TwitchChannel ch = new TwitchChannel(key);
-//    if (liveChecker.isLive(key)) {
-//      ch.setLive(true);
-//    }
     channelList.getItems().add(ch);
     twitchManager.joinChannel(key);
 
-    // Save to config if new
     if (Config.get().getChannel(key) == null) {
       Config.get().upsertChannel(new Config.ChannelConfig(key));
     }
@@ -261,10 +252,6 @@ public class ChatController {
     }
   }
 
-  /*
-   * Switch channel and load last X message (or less) from the ring buffer
-   * This only gets called once on switch click
-   */
   private void switchChannel(TwitchChannel channel) {
     activeChannelName = channel.getName();
     activeChannel.setText("#" + channel.getName());
@@ -309,10 +296,6 @@ public class ChatController {
     });
   }
 
-  /*
-   * Update current live viewers every minute
-   * it updates the viewerCount variable of the UI
-   */
   private void startViewerUpdater() {
     viewerScheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -336,7 +319,6 @@ public class ChatController {
     }, 0, 1, TimeUnit.MINUTES);
   }
 
-
   private void onNewMessage(TwitchMessage msg) {
     chatLogger.log(msg);
     String msgChannel = msg.channel.replace("#", "").toLowerCase();
@@ -356,9 +338,9 @@ public class ChatController {
     );
 
     String withTwitchEmotes = substituteTwitchEmotes(message);
-    
     String emojied = EmojiSubstituter.substitute(withTwitchEmotes);
     String linked = linkify(emojied);
+
     String rendered = substituteEmotes(linked);
 
     String safeUser = escapeForTemplateLiteral(escapeHtml(message.username));
@@ -378,6 +360,10 @@ public class ChatController {
     );
   }
 
+
+  /**
+   * This substitutes global twitch/sub emotes
+   */
   private String substituteTwitchEmotes(TwitchMessage message) {
     String emoteTag = message.tags.getOrDefault("emotes", "");
     if (emoteTag.isBlank()) return escapeHtml(message.content);
@@ -393,7 +379,6 @@ public class ChatController {
     int cursor = 0;
 
     for (var occ : occurrences) {
-      // Escape and append text before this emote
       StringBuilder textBefore = new StringBuilder();
       for (int i = cursor; i < occ.start() && i < codePoints.length; i++) {
         textBefore.appendCodePoint(codePoints[i]);
@@ -401,7 +386,7 @@ public class ChatController {
       result.append(escapeHtml(textBefore.toString()));
 
       String url = occ.localPath().toUri().toString();
-      String altText = "emote"; // TODO: rework
+      String altText = "emote";
       result.append("<img src='").append(url)
               .append("' alt='").append(altText)
               .append("' title='").append(altText)
@@ -410,7 +395,6 @@ public class ChatController {
       cursor = occ.end() + 1;
     }
 
-    // Escape and append remaining text
     StringBuilder remaining = new StringBuilder();
     for (int i = cursor; i < codePoints.length; i++) {
       remaining.appendCodePoint(codePoints[i]);
@@ -420,12 +404,7 @@ public class ChatController {
     return result.toString();
   }
 
-  /**
-   * Wraps https:// URLs in anchor tags that notify Java on click.
-   * Only https — no http, no bare domains.
-   */
   private String linkify(String text) {
-    // Matches https:// URLs, stops at whitespace or common trailing punctuation
     return text.replaceAll(
             "(https://[^\\s<>\"']+)",
             "<a href=\"#\" onclick=\"notifyJava('link','$1'); return false;\" " +
@@ -433,25 +412,60 @@ public class ChatController {
     );
   }
 
-  // TEMPORARY TODO: rework
-  private void loadEmotes() {
-    emoteMap.put("pop", toBase64DataUri("/pop.png"));
-  }
-
+  /**
+   * Safely substitutes native and 7TV emotes without breaking existing HTML tags.
+   */
   private String substituteEmotes(String message) {
-    // TODO: Rework how this works for third party emotes
-    // don't want a third party emote named "img" to replace the <img tags>
-    for (Map.Entry<String, String> entry : emoteMap.entrySet()) {
-      String word = entry.getKey();
-      String dataUri = entry.getValue();
-      String imgTag = "<img src='" + dataUri + "' title='" + word
-              + "' alt='" + word + "' width='32' height='32'>";
-      message = message.replaceAll("\\b" + word + "\\b", imgTag);
+    Map<String, String> sevenTvEmotes = getSevenTVEmotesForActiveChannel();
+
+    // This regex catches either an existing HTML tag (Group 1)
+    // OR a standalone word (Group 2)
+    Pattern pattern = Pattern.compile("(<[^>]+>)|(\\b\\w+\\b)");
+    Matcher matcher = pattern.matcher(message);
+    StringBuilder sb = new StringBuilder();
+
+    while (matcher.find()) {
+      String tag = matcher.group(1);
+      String word = matcher.group(2);
+
+      if (tag != null) {
+        // Html tag, skip
+        matcher.appendReplacement(sb, Matcher.quoteReplacement(tag));
+      } else if (word != null) {
+        if (emoteMap.containsKey(word)) {
+          String dataUri = emoteMap.get(word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
+                  " style='vertical-align:middle;'>", dataUri, word, word);
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
+        } else if (sevenTvEmotes != null && sevenTvEmotes.containsKey(word)) {
+          String emotePath = sevenTvEmotes.get(word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
+                  " style='vertical-align:middle;'>", emotePath, word, word);
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
+        } else {
+          // Just normal text
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(word));
+        }
+      }
     }
-    return message;
+    matcher.appendTail(sb);
+    return sb.toString();
   }
 
-  // Utilities
+  /**
+   * Helper to load 7TV emotes mapped specifically to the active channel
+   */
+  private Map<String, String> getSevenTVEmotesForActiveChannel() {
+    List<EmoteInfo> infoList = EmoteRegistry.get().getAllForChannel(activeChannelName);
+
+    Map<String, String> emoteMap = new HashMap<>();
+    for (EmoteInfo info : infoList) {
+      emoteMap.put(info.name(), info.localPath().toUri().toString());
+    }
+
+    return emoteMap;
+  }
+
   private void injectBridge() {
     JSObject window = (JSObject) engine.executeScript("window");
     window.setMember("javaApp", bridge);
@@ -497,8 +511,6 @@ public class ChatController {
     }
   }
 
-  // UI controls
-
   @FXML
   private void onMinimize() {
     isMinimized = true;
@@ -537,7 +549,7 @@ public class ChatController {
             new KeyValue(channelPanel.minWidthProperty(), PANEL_WIDTH),
             new KeyValue(channelPanel.maxWidthProperty(), PANEL_WIDTH)
     ));
-    // Test
+
     timeline.setOnFinished(e ->
             Platform.runLater(() ->
                     engine.executeScript("chat.scrollTop = chat.scrollHeight;")
@@ -591,7 +603,6 @@ public class ChatController {
       );
       stage.showAndWait();
 
-      // After settings closed, re-apply
       applyConfig();
     } catch (IOException e) {
       e.printStackTrace();
@@ -606,18 +617,13 @@ public class ChatController {
     );
   }
 
-  // Utility class for bridging between js/java
-
   public class JavaBridge {
-    // In JavaBridge
     public void onChatEvent(String type, String payload) {
       Platform.runLater(() -> {
         switch (type) {
-          // Linux only ig
           case "link" -> {
             try {
-              new ProcessBuilder("xdg-open", payload)
-                      .start();
+              new ProcessBuilder("xdg-open", payload).start();
             } catch (Exception e) {
               Debug.error("Failed to open link: " + payload);
             }
