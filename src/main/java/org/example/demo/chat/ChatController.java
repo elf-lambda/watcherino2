@@ -122,6 +122,8 @@ public class ChatController {
     sevenTV.fetchGlobal();
     BTTVEmotesDownloader bttv = new BTTVEmotesDownloader();
     bttv.fetchGlobal();
+    FFZEmotesDownloader ffz = new FFZEmotesDownloader();
+    ffz.fetchGlobal();
 
     java.net.URL chatUrl = getClass().getResource("/org/example/demo/web/chat.html");
     engine.load(chatUrl.toExternalForm());
@@ -421,6 +423,7 @@ public class ChatController {
   private String substituteEmotes(String message) {
     Map<String, String> sevenTvEmotes = getSevenTVEmotesForActiveChannel();
     Map<String, String> BTTVEmotes = getBTTVEmotesForActiveChannel();
+    Map<String, String> FFZEmotes = getFFZEmotesForActiveChannel();
 
     // This regex catches either an existing HTML tag (Group 1)
     // OR a standalone word (Group 2)
@@ -448,6 +451,11 @@ public class ChatController {
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
         } else if (BTTVEmotes.containsKey(word)) {
           String emotePath = BTTVEmotes.get(word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
+                  " style='vertical-align:middle;'>", emotePath, word, word);
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
+        } else if (FFZEmotes.containsKey(word)) {
+          String emotePath = FFZEmotes.get(word);
           String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
                   " style='vertical-align:middle;'>", emotePath, word, word);
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
@@ -492,6 +500,23 @@ public class ChatController {
     }
     return emoteMap;
   }
+
+  /**
+   * Helper to load FFZ emotes for the active channel
+   */
+  private Map<String, String> getFFZEmotesForActiveChannel() {
+    List<EmoteInfo> infoList = EmoteRegistry.get().getAllForChannel(activeChannelName);
+
+    Map<String, String> emoteMap = new HashMap<>();
+    for (EmoteInfo info : infoList) {
+      // ONLY add if the provider is FFZ
+      if (info.provider() == EmoteProvider.FFZ) {
+        emoteMap.put(info.name(), info.localPath().toUri().toString());
+      }
+    }
+    return emoteMap;
+  }
+
 
   private void injectBridge() {
     JSObject window = (JSObject) engine.executeScript("window");

@@ -3,6 +3,7 @@ package org.example.demo.twitch;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import org.example.demo.emotes.BTTVEmotesDownloader;
+import org.example.demo.emotes.FFZEmotesDownloader;
 import org.example.demo.emotes.SEVENTVEmotesDownloader;
 import org.example.demo.logger.Debug;
 
@@ -44,7 +45,8 @@ public class TwitchManager {
     try {
       HttpRequest request = HttpRequest.newBuilder()
               .uri(URI.create("https://api.ivr.fi/v2/twitch/user?login=" + username))
-              .header("User-Agent", "EmoteDownloader/1.0") // Good practice
+              .header("User-Agent", "Mozilla/5.0 (X11; Linux i686; rv:150.0) Gecko/20100101 " +
+                      "Firefox/150.0")
               .GET()
               .build();
 
@@ -86,6 +88,8 @@ public class TwitchManager {
           sevenTV.fetchChannel(twitchId, key);
           BTTVEmotesDownloader bttv = new BTTVEmotesDownloader();
           bttv.fetchChannel(twitchId, key);
+          FFZEmotesDownloader ffz = new FFZEmotesDownloader();
+          ffz.fetchChannel(key);
         } else {
           Debug.warn("Could not fetch ID for {}, 7TV emotes might not load.", key);
         }
