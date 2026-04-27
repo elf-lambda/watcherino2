@@ -11,6 +11,7 @@ import javafx.scene.layout.Priority;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.example.demo.config.Config;
+import org.example.demo.logger.Debug;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -42,6 +43,10 @@ public class SettingsController {
   private TextField newChannelField;
   @FXML
   private TextField newFilterField;
+  @FXML
+  private TextField twitchUsernameField;
+  @FXML
+  private PasswordField oauthTokenField;
 
   @FXML
   public void initialize() {
@@ -72,6 +77,11 @@ public class SettingsController {
     filterWords.addAll(Config.get().getFilters());
     filterListView.setItems(filterWords);
     filterListView.setCellFactory(lv -> new FilterWordCell());
+
+    // OAuth
+    twitchUsernameField.setText(Config.get().getTwitchUsername());
+    oauthTokenField.setText(Config.get().getOauthToken());
+
   }
 
   private void updateVolumeLabel(float val) {
@@ -139,6 +149,8 @@ public class SettingsController {
     Config.get().setTtsModelPath(modelPathField.getText().trim());
     Config.get().setChannels(new ArrayList<>(allChannels));
     Config.get().setFilters(new ArrayList<>(filterWords));
+    Config.get().setTwitchUsername(twitchUsernameField.getText().trim().toLowerCase());
+    Config.get().setOauthToken(oauthTokenField.getText().trim());
     Config.get().save();
     close();
   }
@@ -146,6 +158,17 @@ public class SettingsController {
   @FXML
   private void onCancel() {
     close();
+  }
+
+  @FXML
+  private void onGetToken() {
+    try {
+      new ProcessBuilder("xdg-open",
+              "https://twitchapps.com/tmi/")
+              .start();
+    } catch (Exception e) {
+      Debug.error("Failed to open browser: {}", e.getMessage());
+    }
   }
 
   private void close() {

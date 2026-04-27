@@ -477,7 +477,6 @@ public class ChatController {
 
     Map<String, String> emoteMap = new HashMap<>();
     for (EmoteInfo info : infoList) {
-      // ONLY add if the provider is SEVENTV
       if (info.provider() == EmoteProvider.SEVENTV) {
         emoteMap.put(info.name(), info.localPath().toUri().toString());
       }
@@ -493,7 +492,6 @@ public class ChatController {
 
     Map<String, String> emoteMap = new HashMap<>();
     for (EmoteInfo info : infoList) {
-      // ONLY add if the provider is BTTV
       if (info.provider() == EmoteProvider.BTTV) {
         emoteMap.put(info.name(), info.localPath().toUri().toString());
       }
@@ -509,7 +507,6 @@ public class ChatController {
 
     Map<String, String> emoteMap = new HashMap<>();
     for (EmoteInfo info : infoList) {
-      // ONLY add if the provider is FFZ
       if (info.provider() == EmoteProvider.FFZ) {
         emoteMap.put(info.name(), info.localPath().toUri().toString());
       }
@@ -687,7 +684,11 @@ public class ChatController {
             content.putString(payload);
             clipboard.setContent(content);
           }
-          case "message" -> System.out.println("User sent: " + payload);
+          case "message" -> {
+            if (!payload.isBlank() && !activeChannelName.isBlank()) {
+              TwitchMessageSender.send(activeChannelName, payload);
+            }
+          }
           default -> System.out.println("Unknown event: " + type + " | " + payload);
         }
       });

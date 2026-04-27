@@ -19,6 +19,8 @@ class ConfigData {
   String ttsExecutablePath = "";
   List<Config.ChannelConfig> channels = new ArrayList<>();
   List<String> filters = new ArrayList<>();
+  String oauthToken = "";
+  String twitchUsername = "";
 }
 
 public class Config {
@@ -29,7 +31,8 @@ public class Config {
   private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
   private static final Config INSTANCE = new Config();
-
+  private String oauthToken = "";
+  private String twitchUsername = "";
   // Root config structure
   private float volume = 0.1f;
   private String ttsModelPath = "";
@@ -116,6 +119,8 @@ public class Config {
       data.ttsExecutablePath = this.ttsExecutablePath;
       data.channels = this.channels;
       data.filters = this.filters;
+      data.oauthToken = this.oauthToken;
+      data.twitchUsername = this.twitchUsername;
       try (Writer w = Files.newBufferedWriter(CONFIG_FILE)) {
         GSON.toJson(data, w);
       }
@@ -134,10 +139,28 @@ public class Config {
         this.ttsExecutablePath = data.ttsExecutablePath != null ? data.ttsExecutablePath : "";
         if (data.channels != null) this.channels = data.channels;
         this.filters = data.filters != null ? data.filters : new ArrayList<>();
+        this.oauthToken = data.oauthToken != null ? data.oauthToken : "";
+        this.twitchUsername = data.twitchUsername != null ? data.twitchUsername : "";
       }
     } catch (IOException e) {
       Debug.error("Failed to load config: " + e.getMessage());
     }
+  }
+
+  public String getOauthToken() {
+    return oauthToken;
+  }
+
+  public void setOauthToken(String t) {
+    this.oauthToken = t;
+  }
+
+  public String getTwitchUsername() {
+    return twitchUsername;
+  }
+
+  public void setTwitchUsername(String u) {
+    this.twitchUsername = u;
   }
   // Channel config model
 

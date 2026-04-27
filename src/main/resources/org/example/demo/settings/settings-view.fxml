@@ -16,60 +16,84 @@
     <!-- Body -->
     <HBox VBox.vgrow="ALWAYS" spacing="0">
 
-        <!-- Left pane: general settings + filters -->
-        <VBox spacing="12" style="-fx-padding: 16; -fx-min-width: 260px; -fx-max-width: 260px;"
-              VBox.vgrow="ALWAYS">
+        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                    style="-fx-background: #000000; -fx-background-color: #000000; -fx-border-color: transparent;"
+                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    minWidth="260" maxWidth="260" prefWidth="260">
+            <!-- Left pane: general settings + filters -->
+            <VBox spacing="12" style="-fx-padding: 16; -fx-min-width: 260px; -fx-max-width: 260px;"
+                  VBox.vgrow="ALWAYS">
 
-            <!-- Volume -->
-            <Label text="VOLUME"
-                   style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Slider fx:id="volumeSlider" min="0" max="1"
-                        blockIncrement="0.05" HBox.hgrow="ALWAYS"/>
-                <Label fx:id="volumeLabel" text="50%"
-                       style="-fx-text-fill: #888888; -fx-font-family: 'Consolas'; -fx-font-size: 12px;"
-                       minWidth="40"/>
-            </HBox>
+                <!-- Volume -->
+                <Label text="VOLUME"
+                       style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Slider fx:id="volumeSlider" min="0" max="1"
+                            blockIncrement="0.05" HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="volumeLabel" text="50%"
+                           style="-fx-text-fill: #888888; -fx-font-family: 'Consolas'; -fx-font-size: 12px;"
+                           minWidth="40"/>
+                </HBox>
 
-            <!-- Piper path -->
-            <Label text="PIPER PATH"
-                   style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
-            <HBox spacing="6">
-                <TextField fx:id="piperPathField" HBox.hgrow="ALWAYS"
-                           promptText="/home/user/.local/bin/piper"/>
-                <Button text="…" styleClass="terminal-button" onAction="#onBrowsePiper"
-                        minWidth="30"/>
-            </HBox>
+                <!-- Piper path -->
+                <Label text="PIPER PATH"
+                       style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
+                <HBox spacing="6">
+                    <TextField fx:id="piperPathField" HBox.hgrow="ALWAYS"
+                               promptText="/home/user/.local/bin/piper"/>
+                    <Button text="…" styleClass="terminal-button" onAction="#onBrowsePiper"
+                            minWidth="30"/>
+                </HBox>
 
-            <!-- Model path -->
-            <Label text="MODEL PATH"
-                   style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
-            <HBox spacing="6">
-                <TextField fx:id="modelPathField" HBox.hgrow="ALWAYS"
-                           promptText="/home/user/models/model.onnx"/>
-                <Button text="…" styleClass="terminal-button" onAction="#onBrowseModel"
-                        minWidth="30"/>
-            </HBox>
+                <!-- Model path -->
+                <Label text="MODEL PATH"
+                       style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
+                <HBox spacing="6">
+                    <TextField fx:id="modelPathField" HBox.hgrow="ALWAYS"
+                               promptText="/home/user/models/model.onnx"/>
+                    <Button text="…" styleClass="terminal-button" onAction="#onBrowseModel"
+                            minWidth="30"/>
+                </HBox>
 
-            <!-- Divider -->
-            <Separator/>
+                <Separator/>
 
-            <!-- Filter list -->
-            <Label text="WORD FILTERS"
-                   style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
+                <Label text="TWITCH AUTH"
+                       style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
 
-            <ListView fx:id="filterListView" VBox.vgrow="ALWAYS"
-                      style="-fx-background-color: #000000; -fx-border-color: #1a1a1a;"/>
+                <Label text="USERNAME"
+                       style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
+                <TextField fx:id="twitchUsernameField"
+                           promptText="your_twitch_username"/>
 
-            <!-- Add filter -->
-            <HBox spacing="6">
-                <TextField fx:id="newFilterField" HBox.hgrow="ALWAYS"
-                           promptText="Add filter word..."
-                           onAction="#onAddFilter"/>
-                <Button text="Add" styleClass="terminal-button" onAction="#onAddFilter"/>
-            </HBox>
+                <Label text="OAUTH TOKEN"
+                       style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
+                <HBox spacing="6">
+                    <PasswordField fx:id="oauthTokenField" HBox.hgrow="ALWAYS"
+                                   promptText="oauth:..."/>
+                    <Button text="Get" styleClass="terminal-button" onAction="#onGetToken"
+                            minWidth="40"/>
+                </HBox>
 
-        </VBox>
+                <!-- Divider -->
+                <Separator/>
+
+                <!-- Filter list -->
+                <Label text="WORD FILTERS"
+                       style="-fx-text-fill: #444444; -fx-font-family: 'Consolas'; -fx-font-size: 10px;"/>
+
+                <ListView fx:id="filterListView" VBox.vgrow="ALWAYS"
+                          style="-fx-background-color: #000000; -fx-border-color: #1a1a1a;"/>
+
+                <!-- Add filter -->
+                <HBox spacing="6">
+                    <TextField fx:id="newFilterField" HBox.hgrow="ALWAYS"
+                               promptText="Add filter word..."
+                               onAction="#onAddFilter"/>
+                    <Button text="Add" styleClass="terminal-button" onAction="#onAddFilter"/>
+                </HBox>
+
+            </VBox>
+        </ScrollPane>
 
         <!-- Divider -->
         <Separator orientation="VERTICAL"/>
