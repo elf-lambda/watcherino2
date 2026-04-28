@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -247,7 +248,9 @@ public class TwitchClient {
       if (lowerContent.contains(word.toLowerCase())) {
         msg.isHighlighted = true;
         Thread.startVirtualThread(() -> {
-          AudioPlayer.playWav("./tts/ding.wav", 0.1f);
+          Path configBase = Path.of(System.getProperty("user.home"), ".config", "watcherino",
+                  "tts");
+          AudioPlayer.playWav(configBase + "/ding.wav", 0.1f);
         });
         break;
       }

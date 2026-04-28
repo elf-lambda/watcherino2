@@ -7,6 +7,8 @@ module org.example.demo {
   requires com.google.gson;
   requires java.desktop;
   requires org.slf4j;
+  requires org.slf4j.simple;
+  requires jdk.crypto.ec;
 
 
   opens org.example.demo to javafx.fxml;

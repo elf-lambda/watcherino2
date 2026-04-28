@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,9 @@ public class TwitchLiveChecker {
       while (true) {
         try {
           String channel = soundQueue.take();
-          AudioPlayer.playWav("./tts/" + channel + ".wav", 0.1f);
+          Path configBase = Path.of(System.getProperty("user.home"), ".config", "watcherino",
+                  "tts");
+          AudioPlayer.playWav(configBase + "/" + channel + ".wav", 0.1f);
           Debug.info("> " + channel + " went live!");
         } catch (InterruptedException e) {
           return;

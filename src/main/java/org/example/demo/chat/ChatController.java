@@ -32,7 +32,10 @@ import org.example.demo.twitch.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +81,35 @@ public class ChatController {
   private String activeChannelName = "";
   private ScheduledExecutorService viewerScheduler;
 
+  private void setupLocalWebAssets() {
+    Path webDir = Path.of(System.getProperty("user.home"), ".config", "watcherino", "web");
+    List<String> assets = List.of("chat.html", "chat-script.js", "chat-style.css");
+    try {
+      Files.createDirectories(webDir);
+      boolean copyAll = false;
+      for (String asset : assets) {
+        Path target = webDir.resolve(asset);
+        if (!Files.exists(target)) {
+          copyAll = true;
+          break;
+        }
+      }
+      if (copyAll) {
+        for (String asset : assets) {
+          try (InputStream in = getClass().getResourceAsStream("/org/example/demo/web/" + asset)) {
+            if (in == null) throw new IOException("Missing resource: " + asset);
+            Files.copy(in, webDir.resolve(asset), StandardCopyOption.REPLACE_EXISTING);
+          }
+        }
+      }
+      engine.load(webDir.resolve("chat.html").toUri().toURL().toExternalForm());
+    } catch (IOException e) {
+      Debug.error("Failed to set up local web assets", e);
+      // Fallback: load from classpath (may break file:// images)
+      engine.load(getClass().getResource("/org/example/demo/web/chat.html").toExternalForm());
+    }
+  }
+
   @FXML
   public void initialize() {
     // Generate TTS for each channel
@@ -90,14 +122,23 @@ public class ChatController {
         return;
       }
 
+      Path configBase = Path.of(System.getProperty("user.home"), ".config", "watcherino", "tts");
+
+      try {
+        Files.createDirectories(configBase);
+      } catch (IOException e) {
+        Debug.error("Could not create TTS directory: " + e.getMessage());
+      }
+
       for (Config.ChannelConfig ch : Config.get().getChannels()) {
         if (!ch.isTtsEnabled()) continue;
 
-        String channelPath = "./tts/" + ch.getName() + ".wav";
-        File f = new File(channelPath);
+        Path channelPath = configBase.resolve(ch.getName() + ".wav");
+        File f = channelPath.toFile();
+
         if (!f.exists()) {
           Debug.info("Generating TTS for " + ch.getName());
-          TTSGenerator.generate(piperPath, modelPath, channelPath,
+          TTSGenerator.generate(piperPath, modelPath, channelPath.toString(),
                   ch.getName() + " is now streaming!");
         }
       }
@@ -153,13 +194,21 @@ public class ChatController {
     FFZEmotesDownloader ffz = new FFZEmotesDownloader();
     ffz.fetchGlobal();
 
-    java.net.URL chatUrl = getClass().getResource("/org/example/demo/web/chat.html");
-    engine.load(chatUrl.toExternalForm());
+    // Load listener from .config local
     engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
       if (newState == Worker.State.SUCCEEDED) {
         injectBridge();
       }
     });
+    setupLocalWebAssets();
+
+//    java.net.URL chatUrl = getClass().getResource("/org/example/demo/web/chat.html");
+//    engine.load(chatUrl.toExternalForm());
+//    engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+//      if (newState == Worker.State.SUCCEEDED) {
+//        injectBridge();
+//      }
+//    });
 
     Thread.startVirtualThread(() -> {
       EmojiDownloader.downloadAll(() -> Debug.info("All emojis ready"));
@@ -252,6 +301,7 @@ public class ChatController {
     loaderThread.setDaemon(true);
     loaderThread.start();
   }
+
 
   private void addChannel(String name) {
     String key = name.replaceFirst("^#", "").toLowerCase();
@@ -422,6 +472,7 @@ public class ChatController {
       }
       String emoteName = escapeHtml(emoteTextBuilder.toString());
 
+//      String url = occ.localPath().toUri().toString();
       String url = occ.localPath().toUri().toString();
       result.append("<img src='").append(url)
               .append("' alt='").append(emoteName)
@@ -732,7 +783,7 @@ public class ChatController {
     public String searchEmotes(String channel, String query, int maxResults) {
       List<EmoteRegistry.EmoteSearchResult> results =
               EmoteRegistry.get().search(channel, query, maxResults);
-      
+
       StringBuilder json = new StringBuilder("[");
       for (int i = 0; i < results.size(); i++) {
         EmoteRegistry.EmoteSearchResult r = results.get(i);
