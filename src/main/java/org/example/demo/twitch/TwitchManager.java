@@ -22,15 +22,15 @@ import java.util.function.Consumer;
 // THE OS THREAD DESTROYER
 public class TwitchManager {
 
+  private static final ExecutorService emoteFetchExecutor = Executors.newSingleThreadExecutor();
   // channel name -> client
   private final Map<String, TwitchClient> clients = new ConcurrentHashMap<>();
-
   private final HttpClient httpClient = HttpClient.newBuilder()
           .connectTimeout(Duration.ofSeconds(10))
           .build();
-
   private final Consumer<TwitchMessage> globalOnMessage;
   private final ExecutorService connectionPool = Executors.newCachedThreadPool();
+
 
   public TwitchManager(Consumer<TwitchMessage> globalOnMessage) {
     this.globalOnMessage = globalOnMessage;
@@ -84,12 +84,18 @@ public class TwitchManager {
 
         String twitchId = fetchTwitchId(key);
         if (twitchId != null) {
-          SEVENTVEmotesDownloader sevenTV = new SEVENTVEmotesDownloader();
-          sevenTV.fetchChannel(twitchId, key);
-          BTTVEmotesDownloader bttv = new BTTVEmotesDownloader();
-          bttv.fetchChannel(twitchId, key);
-          FFZEmotesDownloader ffz = new FFZEmotesDownloader();
-          ffz.fetchChannel(key);
+          emoteFetchExecutor.submit(() -> {
+            try {
+              SEVENTVEmotesDownloader sevenTV = new SEVENTVEmotesDownloader();
+              sevenTV.fetchChannel(twitchId, key);
+              BTTVEmotesDownloader bttv = new BTTVEmotesDownloader();
+              bttv.fetchChannel(twitchId, key);
+              FFZEmotesDownloader ffz = new FFZEmotesDownloader();
+              ffz.fetchChannel(key);
+            } catch (Exception e) {
+              Debug.error("Emote fetch failed for " + key + ": " + e.getMessage());
+            }
+          });
         } else {
           Debug.warn("Could not fetch ID for {}, 7TV emotes might not load.", key);
         }

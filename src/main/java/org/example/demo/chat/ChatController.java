@@ -12,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -105,14 +106,41 @@ public class ChatController {
     engine = chatWebView.getEngine();
 
     chatWebView.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+      // Copy
       if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
         engine.executeScript("copySelectionToJava()");
         event.consume();
+        return;
       }
+      // Up Down
+      if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
+        String keyName = (event.getCode() == KeyCode.UP) ? "ArrowUp" : "ArrowDown";
+
+        engine.executeScript(String.format(
+                "if(document.activeElement.id === 'custom-channel') {" +
+                        "   document.dispatchEvent(new KeyboardEvent('keydown', { 'key': '%s', " +
+                        "'bubbles': true }));" +
+                        "}", keyName
+        ));
+        event.consume();
+      }
+      // Escape (close autocomplete)
+      if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+        engine.executeScript(
+                "if(document.activeElement.id === 'custom-channel') {" +
+                        "   document.dispatchEvent(new KeyboardEvent('keydown', { 'key': " +
+                        "'Escape', 'bubbles': true }));" +
+                        "}"
+        );
+        event.consume();
+      }
+      // Enter
       if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
         engine.executeScript(
-                "document.getElementById('custom-channel') === document.activeElement && " +
-                        "sendMessage()"
+                "if(document.activeElement.id === 'custom-channel') {" +
+                        "   document.dispatchEvent(new KeyboardEvent('keydown', { 'key': 'Enter'," +
+                        " 'bubbles': true }));" +
+                        "}"
         );
         event.consume();
       }
@@ -258,6 +286,8 @@ public class ChatController {
     activeChannel.setText("#" + channel.getName());
 
     Platform.runLater(() -> engine.executeScript("clearChat()"));
+    Platform.runLater(() -> engine.executeScript("var activeChannelName = '" + activeChannelName +
+            "';"));
 
     TwitchRingBuffer buffer = twitchManager.getBuffer(activeChannelName);
     if (buffer != null) {
@@ -396,7 +426,7 @@ public class ChatController {
       result.append("<img src='").append(url)
               .append("' alt='").append(emoteName)
               .append("' title='").append(emoteName)
-              .append("' style='height:28px;vertical-align:middle;'>");
+              .append("' style='vertical-align:middle;'>");
 
       cursor = occ.end() + 1;
     }
@@ -427,7 +457,8 @@ public class ChatController {
 
     // This regex catches either an existing HTML tag (Group 1)
     // OR a standalone word (Group 2)
-    Pattern pattern = Pattern.compile("(<[^>]+>)|(\\b\\w+\\b)");
+//    Pattern pattern = Pattern.compile("(<[^>]+>)|(\\b\\w+\\b)");
+    Pattern pattern = Pattern.compile("(<[^>]+>)|(:[\\w-]+:|\\b[\\w-]+\\b)");
     Matcher matcher = pattern.matcher(message);
     StringBuilder sb = new StringBuilder();
 
@@ -441,23 +472,23 @@ public class ChatController {
       } else if (word != null) {
         if (emoteMap.containsKey(word)) {
           String dataUri = emoteMap.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
-                  " style='vertical-align:middle;'>", dataUri, word, word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
+                  "loading='lazy' style='vertical-align:middle;'>", dataUri, word, word);
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
         } else if (sevenTvEmotes.containsKey(word)) {
           String emotePath = sevenTvEmotes.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
-                  " style='vertical-align:middle;'>", emotePath, word, word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
+                  "loading='lazy' style='vertical-align:middle;'>", emotePath, word, word);
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
         } else if (BTTVEmotes.containsKey(word)) {
           String emotePath = BTTVEmotes.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
-                  " style='vertical-align:middle;'>", emotePath, word, word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
+                  "loading='lazy' style='vertical-align:middle;'>", emotePath, word, word);
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
         } else if (FFZEmotes.containsKey(word)) {
           String emotePath = FFZEmotes.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s' height='32'" +
-                  " style='vertical-align:middle;'>", emotePath, word, word);
+          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
+                  "loading='lazy' style='vertical-align:middle;'>", emotePath, word, word);
           matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
         } else {
           // Just normal text
@@ -692,6 +723,32 @@ public class ChatController {
           default -> System.out.println("Unknown event: " + type + " | " + payload);
         }
       });
+    }
+
+    /**
+     * Called by JS autocomplete — returns JSON array of emote results
+     * JS calls: javaApp.searchEmotes(channel, query, maxResults)
+     */
+    public String searchEmotes(String channel, String query, int maxResults) {
+      List<EmoteRegistry.EmoteSearchResult> results =
+              EmoteRegistry.get().search(channel, query, maxResults);
+      
+      StringBuilder json = new StringBuilder("[");
+      for (int i = 0; i < results.size(); i++) {
+        EmoteRegistry.EmoteSearchResult r = results.get(i);
+        if (i > 0) json.append(",");
+        json.append("{")
+                .append("\"name\":\"").append(escapeJson(r.name())).append("\",")
+                .append("\"filePath\":\"").append(escapeJson(r.fileUri())).append("\",")
+                .append("\"source\":\"").append(r.source()).append("\"")
+                .append("}");
+      }
+      json.append("]");
+      return json.toString();
+    }
+
+    private String escapeJson(String s) {
+      return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
   }
 }

@@ -27,12 +27,14 @@ body {
     font-size: 13px;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 #chat {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    overflow-anchor: auto !important;
     overflow-wrap: break-word;
     word-wrap: break-word;
     padding: 8px;
@@ -66,7 +68,6 @@ span {
 }
 
 .username {
-    /*font-weight: bold;*/
     margin-right: 3px;
 }
 
@@ -93,11 +94,13 @@ img {
     background: #444444;
 }
 
+/* ── Input bar ── */
 .chat-input-container {
     background: var(--bg-secondary);
     padding: 8px 12px;
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
+    position: relative;
 }
 
 .input-prompt {
@@ -160,4 +163,92 @@ a {
 
 a:hover {
     text-decoration: underline;
+}
+
+/* ── Emote autocomplete ── */
+#emote-autocomplete {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    z-index: 9999;
+    max-height: 240px;
+    overflow-y: auto;
+    font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+    font-size: 12px;
+}
+
+#emote-autocomplete::-webkit-scrollbar {
+    width: 4px;
+}
+
+#emote-autocomplete::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+#emote-autocomplete::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 2px;
+}
+
+#emote-autocomplete::-webkit-scrollbar-thumb:hover {
+    background: #444444;
+}
+
+.emote-autocomplete-header {
+    padding: 3px 8px;
+    font-size: 10px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    user-select: none;
+}
+
+.emote-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.emote-item:last-child {
+    border-bottom: none;
+}
+
+.emote-item:hover,
+.emote-item.active {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+img {
+    height: 32px;
+    image-rendering: auto !important;
+}
+
+.emote-item img {
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+    image-rendering: auto !important;
+}
+
+.emote-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.emote-item-source {
+    color: var(--text-muted);
+    font-size: 10px;
+    flex-shrink: 0;
 }

@@ -2,6 +2,8 @@ package org.example.demo.emotes;
 
 import org.example.demo.logger.Debug;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -41,7 +43,20 @@ public abstract class BaseEmoteDownloader {
       );
 
       if (response.statusCode() == 200) {
-        Files.copy(response.body(), dest, StandardCopyOption.REPLACE_EXISTING);
+        String fileName = dest.getFileName().toString().toLowerCase();
+
+        try (InputStream is = response.body()) {
+          if (fileName.endsWith(".gif")) {
+            Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
+          } else {
+            BufferedImage resized = EmoteResizer.processEmoteStream(is);
+            if (resized != null) {
+              ImageIO.write(resized, "png", dest.toFile());
+            } else {
+              return false;
+            }
+          }
+        }
         return true;
       } else {
         Debug.warn("HTTP {} downloading {}", response.statusCode(), url);

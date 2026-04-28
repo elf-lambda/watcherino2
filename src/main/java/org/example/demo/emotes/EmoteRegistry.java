@@ -1,5 +1,6 @@
 package org.example.demo.emotes;
 
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -67,5 +68,62 @@ public class EmoteRegistry {
 
   private String normalize(String channel) {
     return channel.replace("#", "").toLowerCase();
+  }
+
+  /**
+   * Searches emotes by name prefix for autocomplete
+   * Returns channel emotes first, then globals, up to maxResults
+   */
+  public List<EmoteSearchResult> search(String channel, String query, int maxResults) {
+    String q = query.toLowerCase();
+    List<EmoteSearchResult> results = new ArrayList<>();
+    Set<String> seen = new HashSet<>();
+
+    // Channel emotes first - they take priority
+    Map<String, EmoteInfo> channelMap = channelEmotes.get(normalize(channel));
+    if (channelMap != null) {
+      channelMap.values().stream()
+              .filter(e -> e.name().toLowerCase().contains(q))
+              .filter(e -> e.localPath() != null && Files.exists(e.localPath()))
+              .sorted(Comparator.comparing(e -> e.name().toLowerCase().indexOf(q)))
+              .forEach(e -> {
+                if (seen.add(e.name()) && results.size() < maxResults) {
+                  results.add(new EmoteSearchResult(
+                          e.name(),
+                          e.localPath().toUri().toString(),
+                          providerLabel(e.provider(), false)
+                  ));
+                }
+              });
+    }
+
+    // Global emotes second
+    globalEmotes.values().stream()
+            .filter(e -> e.name().toLowerCase().contains(q))
+            .filter(e -> e.localPath() != null && Files.exists(e.localPath()))
+            .sorted(Comparator.comparing(e -> e.name().toLowerCase().indexOf(q)))
+            .forEach(e -> {
+              if (seen.add(e.name()) && results.size() < maxResults) {
+                results.add(new EmoteSearchResult(
+                        e.name(),
+                        e.localPath().toUri().toString(),
+                        providerLabel(e.provider(), true)
+                ));
+              }
+            });
+
+    return results;
+  }
+
+  private String providerLabel(EmoteProvider provider, boolean global) {
+    return switch (provider) {
+      case SEVENTV -> global ? "7tv-global" : "7tv";
+      case BTTV -> global ? "bttv-global" : "bttv";
+      case FFZ -> global ? "ffz-global" : "ffz";
+      case TWITCH -> "twitch";
+    };
+  }
+
+  public record EmoteSearchResult(String name, String fileUri, String source) {
   }
 }
