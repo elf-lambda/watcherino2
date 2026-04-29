@@ -16,8 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 public class TwitchClient {
@@ -39,8 +37,8 @@ public class TwitchClient {
   private final String channel;
   private final String username;
   private final TwitchRingBuffer messageBuffer = new TwitchRingBuffer(BUFFER_SIZE);
-  private final BlockingQueue<TwitchMessage> messageQueue = new LinkedBlockingQueue<>(100);
   private final List<String> filterList = new java.util.concurrent.CopyOnWriteArrayList<String>();
+  private String roomId = "";
   private volatile boolean pingRunning = false;
   private Thread pingThread;
   private Socket socket;
@@ -56,6 +54,10 @@ public class TwitchClient {
     this.username = "justinfan" + (1000 + new Random().nextInt(8999));
 //    SettingsController.filterWords.addAll(Config.get().getFilters());
     setFilters(SettingsController.filterWords);
+  }
+
+  public String getRoomId() {
+    return roomId;
   }
 
   public void setFilters(ObservableList<String> sourceList) {
@@ -184,6 +186,9 @@ public class TwitchClient {
     } else if (data.contains(" USERNOTICE ")) {
       msg = parseUserNotice(data);
       msg.isSystemMessage = true;
+    } else if (data.contains(" ROOMSTATE ")) {
+      parseRoomState(data);
+      return;
     }
 
     if (msg != null) {
@@ -210,6 +215,15 @@ public class TwitchClient {
     int spaceIdx = data.indexOf(' ');
     return spaceIdx == -1 ? data : data.substring(spaceIdx + 1);
   }
+
+  private void parseRoomState(String data) {
+    Map<String, String> tags = parseTags(data);
+    String id = tags.get("room-id");
+    if (id != null && !id.isBlank()) {
+      roomId = id;
+    }
+  }
+
 
   private TwitchMessage parsePrivMsg(String data) {
     Map<String, String> tags = parseTags(data);

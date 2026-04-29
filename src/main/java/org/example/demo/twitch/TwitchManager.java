@@ -1,17 +1,12 @@
 package org.example.demo.twitch;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
 import org.example.demo.emotes.BTTVEmotesDownloader;
 import org.example.demo.emotes.FFZEmotesDownloader;
 import org.example.demo.emotes.SEVENTVEmotesDownloader;
 import org.example.demo.logger.Debug;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,31 +36,13 @@ public class TwitchManager {
   }
 
   /**
-   * Fetches the numeric Twitch User ID using the IVR API.
-   * This avoids needing a Twitch Client-ID/Secret for simple lookups.
+   * Fetches the numeric Twitch User ID (Room ID)
    */
   private String fetchTwitchId(String username) {
-    try {
-      HttpRequest request = HttpRequest.newBuilder()
-              .uri(URI.create("https://api.ivr.fi/v2/twitch/user?login=" + username))
-              .header("User-Agent", "Mozilla/5.0 (X11; Linux i686; rv:150.0) Gecko/20100101 " +
-                      "Firefox/150.0")
-              .GET()
-              .build();
+    String key = username.toLowerCase().replace("#", "");
+    TwitchClient client = clients.get(key);
+    return client != null ? client.getRoomId() : "";
 
-      HttpResponse<String> response = httpClient.send(request,
-              HttpResponse.BodyHandlers.ofString());
-
-      if (response.statusCode() == 200) {
-        JsonArray array = JsonParser.parseString(response.body()).getAsJsonArray();
-        if (array.size() > 0) {
-          return array.get(0).getAsJsonObject().get("id").getAsString();
-        }
-      }
-    } catch (Exception e) {
-      Debug.error("Error fetching Twitch ID for {}: {}", username, e.getMessage());
-    }
-    return null;
   }
 
   public void joinChannel(String channel) {
@@ -85,8 +62,15 @@ public class TwitchManager {
         client.connect();
         Debug.info("Joined channel: " + key);
 
-        String twitchId = fetchTwitchId(key);
-        if (twitchId != null) {
+        // TODO: Rework at some point :^)
+        int attempts = 0;
+        while (client.getRoomId().isBlank() && attempts < 20) {
+          Thread.sleep(250);
+          attempts++;
+        }
+
+        String twitchId = client.getRoomId();
+        if (!twitchId.isBlank()) {
           emoteFetchExecutor.submit(() -> {
             try {
               sevenTV.fetchChannel(twitchId, key);
@@ -97,11 +81,13 @@ public class TwitchManager {
             }
           });
         } else {
-          Debug.warn("Could not fetch ID for {}, 7TV emotes might not load.", key);
+          Debug.warn("Could not get room-id for {} after waiting, emotes may not load", key);
         }
       } catch (IOException e) {
         Debug.error("Failed to join " + key + ": " + e.getMessage());
         clients.remove(key);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
       }
     });
   }

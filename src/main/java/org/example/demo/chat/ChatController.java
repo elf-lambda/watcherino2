@@ -86,6 +86,10 @@ public class ChatController {
     List<String> assets = List.of("chat.html", "chat-script.js", "chat-style.css");
     try {
       Files.createDirectories(webDir);
+      // Todo copy ding.wav sound to here
+      Path ttsDir = Path.of(System.getProperty("user.home"), ".config", "watcherino", "tts");
+      Files.createDirectories(ttsDir);
+
       boolean copyAll = true;
 //      for (String asset : assets) {
 //        Path target = webDir.resolve(asset);
