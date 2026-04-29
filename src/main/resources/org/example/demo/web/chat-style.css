@@ -23,7 +23,7 @@ html, body {
 body {
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Consolas', 'Monaco', monospace, 'Noto Color Emoji', sans-serif;
+    font-family: 'Hack', 'Monaco', monospace, 'Noto Color Emoji', sans-serif;
     font-size: 13px;
     display: flex;
     flex-direction: column;
