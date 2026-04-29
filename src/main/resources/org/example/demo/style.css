@@ -1,6 +1,6 @@
 .root {
     -fx-background-color: #000000;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 13px;
 }
 
@@ -24,33 +24,33 @@
 
 .label {
     -fx-text-fill: #eaeaea;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 12px;
 }
 
 .terminal-symbol {
     -fx-text-fill: #eaeaea;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 13px;
 }
 
 #activeChannel {
     -fx-text-fill: #cccccc;
     -fx-font-size: 13px;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
 }
 
 .viewer-count {
     -fx-text-fill: #b5004b;
     -fx-font-size: 13px;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-weight: bold;
 }
 
 .viewer-count-name {
     -fx-text-fill: #949393;
     -fx-font-size: 14px;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
 }
 
 .button {
@@ -58,7 +58,7 @@
     -fx-text-fill: #eaeaea;
     -fx-border-color: #2a2a2a;
     -fx-border-width: 1;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 12px;
     -fx-padding: 4 10 4 10;
     -fx-cursor: hand;
@@ -81,7 +81,7 @@
     -fx-text-fill: #eaeaea;
     -fx-border-color: #2a2a2a;
     -fx-border-width: 1;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 10px;
     -fx-padding: 3 8 3 8;
     -fx-background-radius: 0;
@@ -133,7 +133,7 @@
 .system-message {
     -fx-text-fill: #444444;
     -fx-font-style: italic;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
 }
 
 .chat-input-container {
@@ -148,7 +148,7 @@
     -fx-text-fill: #ffffff;
     -fx-border-color: #2a2a2a;
     -fx-border-width: 1;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 12px;
     -fx-padding: 6 10 6 10;
     -fx-background-radius: 0;
@@ -179,7 +179,7 @@
     -fx-text-fill: #cccccc;
     -fx-border-color: #1a1a1a;
     -fx-border-width: 1;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 12px;
     -fx-padding: 3 4 3 4;
     -fx-background-radius: 0;
@@ -258,7 +258,7 @@
 
 .menu-item .label {
     -fx-text-fill: #eaeaea;
-    -fx-font-family: "Consolas", "Monospaced";
+    -fx-font-family: "Hack", "Monospaced";
     -fx-font-size: 12px;
 }
 

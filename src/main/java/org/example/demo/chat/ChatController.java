@@ -86,14 +86,14 @@ public class ChatController {
     List<String> assets = List.of("chat.html", "chat-script.js", "chat-style.css");
     try {
       Files.createDirectories(webDir);
-      boolean copyAll = false;
-      for (String asset : assets) {
-        Path target = webDir.resolve(asset);
-        if (!Files.exists(target)) {
-          copyAll = true;
-          break;
-        }
-      }
+      boolean copyAll = true;
+//      for (String asset : assets) {
+//        Path target = webDir.resolve(asset);
+//        if (!Files.exists(target)) {
+//          copyAll = true;
+//          break;
+//        }
+//      }
       if (copyAll) {
         for (String asset : assets) {
           try (InputStream in = getClass().getResourceAsStream("/org/example/demo/web/" + asset)) {

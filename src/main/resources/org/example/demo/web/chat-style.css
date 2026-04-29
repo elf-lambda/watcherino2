@@ -46,7 +46,7 @@ body {
     margin-bottom: 3px;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    font-family: 'Consolas', 'Monaco', 'Noto Color Emoji', monospace;
+    font-family: 'Hack', 'Monaco', 'Noto Color Emoji', monospace;
 }
 
 span {
