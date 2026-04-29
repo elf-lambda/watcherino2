@@ -35,16 +35,6 @@ public class TwitchManager {
 
   }
 
-  /**
-   * Fetches the numeric Twitch User ID (Room ID)
-   */
-  private String fetchTwitchId(String username) {
-    String key = username.toLowerCase().replace("#", "");
-    TwitchClient client = clients.get(key);
-    return client != null ? client.getRoomId() : "";
-
-  }
-
   public void joinChannel(String channel) {
     String key = channel.toLowerCase().replace("#", "");
     if (clients.containsKey(key)) return;
