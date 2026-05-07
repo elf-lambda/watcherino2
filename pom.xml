@@ -99,7 +99,7 @@
                                 <jvmArg>--add-opens javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED
                                 </jvmArg>
                                 <jvmArg>-Xms64m</jvmArg>
-                                <jvmArg>-Xmx256m</jvmArg>
+                                <jvmArg>-Xmx512m</jvmArg>
                                 <jvmArg>-XX:+UseZGC</jvmArg>
                                 <jvmArg>-XX:SoftRefLRUPolicyMSPerMB=0</jvmArg>
                             </jvmArgs>

@@ -352,6 +352,26 @@ public class ChatController {
     int viewers = liveChecker.getViewers(activeChannelName);
     viewerCount.setText(String.valueOf(viewers));
     viewerCountName.setText("viewers");
+    try {
+      var meta = TwitchMeta.getChannelMetadata(activeChannelName);
+      String title = meta.get("title");
+      String game = meta.get("game");
+
+      String safeTitle = title.replace("\\", "\\\\").replace("'", "\\'");
+      String safeGame = game.replace("\\", "\\\\").replace("'", "\\'");
+
+      Platform.runLater(() ->
+              engine.executeScript(String.format(
+                      "setChannelMetadata('%s', '%s');",
+                      safeTitle, safeGame
+              ))
+      );
+    } catch (Exception e) {
+      Debug.error("Failed to fetch channel metadata: " + e.getMessage());
+      Platform.runLater(() ->
+              engine.executeScript("setChannelMetadata('Error', 'Could not load info');")
+      );
+    }
   }
 
   private void sortChannels() {
@@ -526,7 +546,7 @@ public class ChatController {
   private String substituteEmotes(String message) {
     Map<String, String> emotes = getEmotesForActiveChannel();
 
-    Matcher matcher = pattern.matcher(message); // your static final pattern
+    Matcher matcher = pattern.matcher(message);
     StringBuilder sb = new StringBuilder();
 
     while (matcher.find()) {
@@ -536,7 +556,7 @@ public class ChatController {
       if (tag != null) {
         matcher.appendReplacement(sb, Matcher.quoteReplacement(tag));
       } else if (word != null) {
-        String path = emotes.get(word); // one map, all providers
+        String path = emotes.get(word);
         if (path != null) {
           String img = String.format(
                   "<img src='%s' title='%s' alt='%s' loading='lazy' style='vertical-align:middle;" +

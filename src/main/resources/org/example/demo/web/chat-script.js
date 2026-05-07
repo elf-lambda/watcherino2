@@ -173,6 +173,55 @@ function autocompleteSearch(query) {
     }
 }
 
+function setChannelMetadata(title, game) {
+    const wrap = document.getElementById('title-wrap');
+    const titleEl = document.getElementById('stream-title');
+    const gameEl = document.getElementById('stream-game');
+
+    if (gameEl) gameEl.textContent = game || '—';
+
+    if (!wrap || !titleEl) return;
+
+    // Clear any previous state
+    titleEl.textContent = title || '—';
+    titleEl.style.animation = 'none';
+    wrap.onmouseenter = null;
+    wrap.onmouseleave = null;
+
+    requestAnimationFrame(() => {
+        const overflow = titleEl.scrollWidth - wrap.clientWidth;
+        if (overflow <= 4) return; // fits fine, nothing to do
+
+        wrap.title = title;
+
+        wrap.onmouseenter = function () {
+            const fullText = titleEl.textContent.replace(/\s+·.*$/, ''); // strip any old clone marker
+            const separator = '     ';
+            const loopText = fullText + separator + fullText;
+            titleEl.textContent = loopText;
+
+            const singleWidth = titleEl.scrollWidth / 2;
+            const speed = 60; // px per second
+            const duration = singleWidth / speed;
+
+            const styleEl = document.getElementById('marquee-kf') || document.createElement('style');
+            styleEl.id = 'marquee-kf';
+            styleEl.textContent = `@keyframes marquee-tick {
+                0%   { transform: translateX(0); }
+                100% { transform: translateX(-${singleWidth}px); }
+            }`;
+            if (!styleEl.parentNode) document.head.appendChild(styleEl);
+
+            titleEl.style.animation = `marquee-tick ${duration}s linear infinite`;
+        };
+
+        wrap.onmouseleave = function () {
+            titleEl.style.animation = 'none';
+            titleEl.textContent = title || '—';
+        };
+    });
+}
+
 // Handles input changes, triggers autocomplete when user types ":"
 input.addEventListener("input", function (e) {
     const val = input.value;

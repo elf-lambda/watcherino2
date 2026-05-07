@@ -22,37 +22,46 @@ public class TwitchClient {
 
   private static final String SERVER = "irc.chat.twitch.tv";
   private static final int PORT = 6667;
-  private static final int BUFFER_SIZE = 128;
+  private static final int BUFFER_SIZE = 512;
   private static final String[] DEFAULT_COLORS = {
           "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#e67e22",
           "#1abc9c", "#f1c40f", "#95a5a6", "#e91e63", "#00bcd4"
   };
-  // Light
+  // Light theme colors (unused for now)
 //  private static final String[] DEFAULT_COLORS = {
 //          "#c0392b", "#2471a3", "#1e8449", "#6c3483", "#d35400",
 //          "#117a65", "#b7770d", "#1a252f", "#922b21", "#0e6655"
 //  };
   private static final int SOCKET_TIMEOUT_MS = 60_000;
   private static final int PING_INTERVAL_MS = 30_000;
+
   private final String channel;
   private final String username;
   private final TwitchRingBuffer messageBuffer = new TwitchRingBuffer(BUFFER_SIZE);
-  private final List<String> filterList = new java.util.concurrent.CopyOnWriteArrayList<String>();
+  private final List<String> filterList = new java.util.concurrent.CopyOnWriteArrayList<>();
+
   private String roomId = "";
-  private volatile boolean pingRunning = false;
-  private Thread pingThread;
-  private Socket socket;
   private volatile boolean running = false;
   private volatile boolean connected = false;
+  private volatile boolean pingRunning = false;
+
+  // These are replaced as a unit inside openSocket(), which is the only place
+  // that touches them. listen() and the ping thread snapshot them into locals
+  // so they don't hold a stale ref if reconnect() swaps them mid-flight
+  private Socket socket;
+  private PrintWriter writer;
+  private BufferedReader reader;
+
   private Thread listenerThread;
-  // Called on every new message, set by TwitchManager
+  private Thread pingThread;
+
+  // Set by TwitchManager after construction
   private Consumer<TwitchMessage> onMessage;
 
 
   public TwitchClient(String channel) {
     this.channel = channel.startsWith("#") ? channel : "#" + channel;
     this.username = "justinfan" + (1000 + new Random().nextInt(8999));
-//    SettingsController.filterWords.addAll(Config.get().getFilters());
     setFilters(SettingsController.filterWords);
   }
 
@@ -61,11 +70,9 @@ public class TwitchClient {
   }
 
   public void setFilters(ObservableList<String> sourceList) {
-    // 1. Initial sync
     filterList.clear();
     filterList.addAll(sourceList);
 
-    // 2. Watch for future changes (adding/removing words in UI)
     sourceList.addListener((ListChangeListener<String>) c -> {
       filterList.clear();
       filterList.addAll(sourceList);
@@ -77,26 +84,133 @@ public class TwitchClient {
     this.onMessage = onMessage;
   }
 
-  private void startPingThread() {
-    if (pingThread != null && pingThread.isAlive()) {
-      pingThread.interrupt();
+  public void connect() throws IOException {
+    running = true;
+    openSocket();
+
+    listenerThread = new Thread(this::listen, "twitch-" + channel);
+    listenerThread.setDaemon(true);
+    listenerThread.start();
+
+    startPingThread();
+  }
+
+  // Opens (or reopens) the socket and wires up a fresh reader/writer pair
+  // Always close the old socket first so we don't leak file descriptors
+  private void openSocket() throws IOException {
+    closeSocket();
+
+    socket = new Socket(SERVER, PORT);
+    socket.setSoTimeout(SOCKET_TIMEOUT_MS);
+
+    writer = new PrintWriter(socket.getOutputStream(), true);
+    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+    writer.println("CAP REQ :twitch.tv/tags twitch.tv/commands");
+    writer.println("NICK " + username);
+    writer.println("JOIN " + channel);
+
+    connected = true;
+    Debug.info("Connected to " + channel);
+  }
+
+  private void closeSocket() {
+    connected = false;
+    try {
+      if (reader != null) reader.close();
+    } catch (IOException ignored) {
+    }
+    try {
+      if (writer != null) writer.close();
+    } catch (Exception ignored) {
+    }
+    try {
+      if (socket != null && !socket.isClosed()) socket.close();
+    } catch (IOException ignored) {
+    }
+    reader = null;
+    writer = null;
+  }
+
+  private void listen() {
+    while (running) {
       try {
-        pingThread.join(1000);
-      } catch (InterruptedException ignored) {
+        // Snapshot to a local reconnect() can swap the field while we're
+        // blocked on readLine() and we don't want to suddenly read from null
+        BufferedReader localReader = reader;
+        if (localReader == null) {
+          Thread.sleep(100);
+          continue;
+        }
+
+        String line = localReader.readLine();
+
+        if (line == null) {
+          if (!running) return;
+          Debug.info("Stream EOF on " + channel + ", reconnecting...");
+          reconnect();
+          continue;
+        }
+
+        if (line.startsWith("PING")) {
+          PrintWriter w = writer;
+          if (w != null) w.println("PONG :tmi.twitch.tv");
+          continue;
+        }
+
+        handleLine(line);
+
+      } catch (java.net.SocketTimeoutException e) {
+        if (!running) return;
+        connected = false;
+        Debug.error("Socket timeout on " + channel + ", reconnecting...");
+        reconnect();
+      } catch (IOException e) {
+        if (!running) return;
+        connected = false;
+        Debug.error("Connection lost on " + channel + ": " + e.getMessage());
+        reconnect();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return;
       }
     }
+  }
+
+  private void reconnect() {
+    int attempt = 0;
+    while (running) {
+      attempt++;
+      // 2s / 4s / 8s / 16s / 30s max
+      long delay = Math.min(2000L * (1L << Math.min(attempt - 1, 4)), 30_000L);
+      try {
+        Thread.sleep(delay);
+        openSocket();
+        Debug.info("Reconnected to " + channel + " (attempt " + attempt + ")");
+        return;
+      } catch (IOException e) {
+        Debug.error("Reconnect attempt " + attempt + " failed for " + channel + ": " + e.getMessage());
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return;
+      }
+    }
+  }
+
+  private void startPingThread() {
+    stopPingThread();
 
     pingRunning = true;
     pingThread = new Thread(() -> {
       while (running && pingRunning) {
         try {
           Thread.sleep(PING_INTERVAL_MS);
-          if (socket != null && !socket.isClosed()) {
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            out.println("PING :tmi.twitch.tv");
+          PrintWriter w = writer;
+          if (w != null && !w.checkError()) {
+            w.println("PING :tmi.twitch.tv");
           }
         } catch (InterruptedException e) {
-          return; // cleanly killed
+          return;
         } catch (Exception e) {
           if (!running) return;
         }
@@ -107,72 +221,31 @@ public class TwitchClient {
     Debug.info("Ping started for " + channel);
   }
 
-  public void connect() throws IOException {
-    socket = new Socket(SERVER, PORT);
-    socket.setSoTimeout(SOCKET_TIMEOUT_MS);
-    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-
-    out.println("CAP REQ :twitch.tv/tags twitch.tv/commands");
-    out.println("NICK " + username);
-    out.println("JOIN " + channel);
-
-    connected = true;
-    running = true;
-
-    listenerThread = new Thread(this::listen, "twitch-" + channel);
-    listenerThread.setDaemon(true);
-    listenerThread.start();
-
-    startPingThread();
-  }
-
-  private void listen() {
-    while (running) {
+  private void stopPingThread() {
+    pingRunning = false;
+    if (pingThread != null) {
+      pingThread.interrupt();
       try {
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(socket.getInputStream())
-        );
-        String line;
-        while ((line = reader.readLine()) != null && running) {
-          if (line.startsWith("PING")) {
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            out.println("PONG :tmi.twitch.tv");
-            continue;
-          }
-          handleLine(line);
-        }
-      } catch (java.net.SocketTimeoutException e) {
-        if (!running) return;
-        connected = false;
-        Debug.error("Socket timeout on " + channel + ", reconnecting...");
-        reconnect();
-      } catch (IOException e) {
-        if (!running) return;
-        connected = false;
-        Debug.error("Connection lost on " + channel + ", reconnecting...");
-        reconnect();
+        pingThread.join(1000);
+      } catch (InterruptedException ignored) {
       }
+      pingThread = null;
     }
   }
 
-  private void reconnect() {
-    while (running) {
+  public void stop() {
+    running = false;
+    stopPingThread();
+    closeSocket();
+    if (listenerThread != null) {
+      listenerThread.interrupt();
       try {
-        Thread.sleep(5000);
-        socket = new Socket(SERVER, PORT);
-        socket.setSoTimeout(60_000);
-        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-        out.println("CAP REQ :twitch.tv/tags twitch.tv/commands");
-        out.println("NICK " + username);
-        out.println("JOIN " + channel);
-        connected = true;
-        Debug.info("Reconnected to " + channel);
-        startPingThread(); // <-- restart ping for this channel
-        return;
-      } catch (Exception e) {
-        Debug.error("Reconnect failed for " + channel + ", retrying...");
+        if (pingThread != null) pingThread.join(2000);
+        listenerThread.join(2000);
+      } catch (InterruptedException ignored) {
       }
     }
+    Debug.info("Stopped " + channel);
   }
 
   private void handleLine(String data) {
@@ -224,7 +297,6 @@ public class TwitchClient {
     }
   }
 
-
   private TwitchMessage parsePrivMsg(String data) {
     Map<String, String> tags = parseTags(data);
     String payload = stripTags(data);
@@ -247,18 +319,16 @@ public class TwitchClient {
 
     TwitchMessage msg = new TwitchMessage(username, content, channel, userColor, tags, false);
 
-    // Parse badges tag — "broadcaster/1,moderator/1,vip/1" etc
+    // "broadcaster/1,moderator/1,vip/1" etc
     String badges = tags.getOrDefault("badges", "");
     msg.isStreamer = badges.contains("broadcaster");
     msg.isModerator = badges.contains("moderator");
     msg.isVIP = badges.contains("vip");
 
-    // TODO: Rework... might be too slow
+    // TODO: rework, might be too slow for high-volume channels
     String lowerContent = content.toLowerCase();
-
     for (String word : filterList) {
       if (word.length() > lowerContent.length()) continue;
-
       if (lowerContent.contains(word.toLowerCase())) {
         msg.isHighlighted = true;
         Thread.startVirtualThread(() -> {
@@ -297,8 +367,6 @@ public class TwitchClient {
     return new TwitchMessage("<SYSTEM>", content, channel, "#cc0000", tags, true);
   }
 
-  // Color utilities
-
   private TwitchMessage parseUserNotice(String data) {
     Map<String, String> tags = parseTags(data);
     String payload = stripTags(data);
@@ -332,7 +400,7 @@ public class TwitchClient {
       int g = Integer.parseInt(hex.substring(2, 4), 16);
       int b = Integer.parseInt(hex.substring(4, 6), 16);
 
-      // If too dark for dark background, lighten it
+      // Lighten colors that are too dark to read on a dark background
       double luminance = 0.299 * r + 0.587 * g + 0.114 * b;
       if (luminance < 80) {
         r = (int) (r + (255 - r) * 0.5);
@@ -346,57 +414,9 @@ public class TwitchClient {
     }
   }
 
-  // Light
-//  private String adjustColorForLight(String hex) {
-//    try {
-//      hex = hex.replace("#", "");
-//      if (hex.length() != 6) return "#333333";
-//
-//      int r = Integer.parseInt(hex.substring(0, 2), 16);
-//      int g = Integer.parseInt(hex.substring(2, 4), 16);
-//      int b = Integer.parseInt(hex.substring(4, 6), 16);
-//
-//      // Darken by 40% toward black
-//      r = (int) (r * 0.6);
-//      g = (int) (g * 0.6);
-//      b = (int) (b * 0.6);
-//
-//      // If it's still too light for a light background, darken more
-//      double luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-//      if (luminance > 140) {
-//        r = (int) (r * 0.5);
-//        g = (int) (g * 0.5);
-//        b = (int) (b * 0.5);
-//      }
-//
-//      return String.format("#%02x%02x%02x", r, g, b);
-//    } catch (Exception e) {
-//      return "#333333";
-//    }
-//  }
-
-
   private String getDefaultColor(String username) {
     int hash = username.chars().sum();
     return DEFAULT_COLORS[hash % DEFAULT_COLORS.length];
-  }
-
-  public void stop() {
-    running = false;
-    pingRunning = false;
-    if (pingThread != null) pingThread.interrupt();
-    connected = false;
-    try {
-      if (socket != null) socket.close();
-    } catch (IOException ignored) {
-    }
-    // To kill ping threads TODO: rework with virutal threads?
-    try {
-      if (pingThread != null) pingThread.join(2000);
-      if (listenerThread != null) listenerThread.join(2000);
-    } catch (InterruptedException ignored) {
-    }
-    Debug.info("Stopped " + channel);
   }
 
   public boolean isConnected() {

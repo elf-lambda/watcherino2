@@ -78,7 +78,7 @@ img {
 }
 
 #chat::-webkit-scrollbar {
-    width: 4px;
+    width: 12px;
 }
 
 #chat::-webkit-scrollbar-track {
@@ -251,4 +251,36 @@ img {
     color: var(--text-muted);
     font-size: 10px;
     flex-shrink: 0;
+}
+
+#stream-info {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 5px 12px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.marquee-wrap {
+    overflow: hidden;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.marquee-content {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.stream-game {
+    font-size: 12px;
+    color: #a78bfa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

@@ -79,14 +79,24 @@ public class EmojiDownloader {
   public static void downloadAll(Runnable onComplete) {
     Thread.startVirtualThread(() -> {
       try {
-        // Lock it to 15 at a time
-        sem.acquire();
         Files.createDirectories(EMOJI_DIR);
-        Debug.info("Fetching full emoji file list via git tree API...");
+        long existing;
+        try (var stream = Files.list(EMOJI_DIR)) {
+          existing = stream.filter(p -> p.toString().endsWith(".png")).count();
+        }
+
+        Debug.info("Emoji cache: {} files on disk", existing);
+
+        if (existing >= 3600) {
+          Debug.info("Emoji set looks complete ({} files), skipping download", existing);
+          if (onComplete != null) onComplete.run();
+          return;
+        }
+        Debug.info("Fetching emoji file list from GitHub ({} already cached)...", existing);
+
         HttpRequest treeRequest = HttpRequest.newBuilder()
                 .uri(URI.create(
-                        "https://api.github.com/repos/jdecked/twemoji/git/trees/main" +
-                                "?recursive=1"
+                        "https://api.github.com/repos/jdecked/twemoji/git/trees/main?recursive=1"
                 ))
                 .header("Accept", "application/vnd.github.v3+json")
                 .timeout(Duration.ofSeconds(30))
@@ -96,7 +106,6 @@ public class EmojiDownloader {
                 treeRequest, HttpResponse.BodyHandlers.ofString()
         );
 
-        // Parse response, filter only 72x72 PNG files
         com.google.gson.JsonObject root = com.google.gson.JsonParser
                 .parseString(treeResponse.body())
                 .getAsJsonObject();
@@ -107,29 +116,33 @@ public class EmojiDownloader {
         for (com.google.gson.JsonElement el : tree) {
           String path = el.getAsJsonObject().get("path").getAsString();
           if (path.startsWith("assets/72x72/") && path.endsWith(".png")) {
-            // Extract just the filename e.g. "1f600.png"
             filenames.add(path.substring("assets/72x72/".length()));
           }
         }
 
-        int total = filenames.size();
-        Debug.info("Found {} emoji files total", total);
+        Debug.info("GitHub reports {} emoji files total", filenames.size());
 
-        // Count already cached
-        long cached = filenames.stream()
-                .filter(name -> Files.exists(EMOJI_DIR.resolve(name)))
-                .count();
-        Debug.info("{} already cached, downloading {} new ones", cached, total - cached);
+        List<String> missing = filenames.stream()
+                .filter(name -> !Files.exists(EMOJI_DIR.resolve(name)))
+                .toList();
 
-        // Download missing ones in parallel
+        if (missing.isEmpty()) {
+          Debug.info("All emoji already cached");
+          if (onComplete != null) onComplete.run();
+          return;
+        }
+
+        Debug.info("Downloading {} missing emoji...", missing.size());
+        Semaphore sem = new Semaphore(20);
         int[] downloaded = {0};
         int[] failed = {0};
 
-        List<Thread> threads = filenames.stream()
-                .filter(name -> !Files.exists(EMOJI_DIR.resolve(name)))
+        List<Thread> threads = missing.stream()
                 .map(name -> Thread.startVirtualThread(() -> {
-                  Path dest = EMOJI_DIR.resolve(name);
                   try {
+                    sem.acquire();
+                    Path dest = EMOJI_DIR.resolve(name);
+
                     HttpRequest req = HttpRequest.newBuilder()
                             .uri(URI.create(CDN + name))
                             .timeout(Duration.ofSeconds(15))
@@ -148,28 +161,28 @@ public class EmojiDownloader {
                       synchronized (failed) {
                         failed[0]++;
                       }
-                      Debug.warn("404 for emoji: {}", name);
+                      Debug.warn("CDN returned {} for emoji: {}", resp.statusCode(), name);
                     }
                   } catch (Exception e) {
                     synchronized (failed) {
                       failed[0]++;
                     }
                     Debug.warn("Failed to download {}: {}", name, e.getMessage());
+                  } finally {
+                    sem.release();
                   }
                 }))
                 .toList();
 
         for (Thread t : threads) t.join();
 
-        Debug.info("Emoji download complete: {} downloaded, {} failed, {} total cached",
-                downloaded[0], failed[0], total - failed[0]);
+        Debug.info("Emoji download complete: {} downloaded, {} failed",
+                downloaded[0], failed[0]);
 
         if (onComplete != null) onComplete.run();
 
       } catch (Exception e) {
         Debug.error("Failed to download emoji set: {}", e.getMessage(), e);
-      } finally {
-        sem.release();
       }
     });
   }
