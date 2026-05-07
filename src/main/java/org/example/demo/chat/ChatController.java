@@ -50,11 +50,13 @@ public class ChatController {
 
   // Useless for now, only used for minimize/maximize list panel
   private static final double PANEL_WIDTH = 170.0;
-
+  private static String cachedEmoteChannel = null;
+  private static Map<String, String> cachedEmoteMap = new HashMap<>();
   private final JavaBridge bridge = new JavaBridge();
   private final Map<String, String> emoteMap = new HashMap<>();
   private final ChatLogger chatLogger = new ChatLogger();
-
+  //    Pattern pattern = Pattern.compile("(<[^>]+>)|(\\b\\w+\\b)");
+  private final Pattern pattern = Pattern.compile("(<[^>]+>)|(:[\\w-]+:|\\b[\\w-]+\\b)");
   @FXML
   private Label activeChannel;
   @FXML
@@ -502,19 +504,29 @@ public class ChatController {
     );
   }
 
+  private Map<String, String> getEmotesForActiveChannel() {
+    if (activeChannelName.equals(cachedEmoteChannel)) {
+      return cachedEmoteMap;
+    }
+
+    List<EmoteInfo> infoList = EmoteRegistry.get().getAllForChannel(activeChannelName);
+    Map<String, String> map = new HashMap<>(infoList.size());
+    for (EmoteInfo info : infoList) {
+      map.put(info.name(), info.localPath().toUri().toString());
+    }
+
+    cachedEmoteChannel = activeChannelName;
+    cachedEmoteMap = map;
+    return map;
+  }
+
   /**
    * Safely substitutes native and 7TV/BTTV/FFZ emotes without breaking existing HTML tags.
    */
   private String substituteEmotes(String message) {
-    Map<String, String> sevenTvEmotes = getSevenTVEmotesForActiveChannel();
-    Map<String, String> BTTVEmotes = getBTTVEmotesForActiveChannel();
-    Map<String, String> FFZEmotes = getFFZEmotesForActiveChannel();
+    Map<String, String> emotes = getEmotesForActiveChannel();
 
-    // This regex catches either an existing HTML tag (Group 1)
-    // OR a standalone word (Group 2)
-//    Pattern pattern = Pattern.compile("(<[^>]+>)|(\\b\\w+\\b)");
-    Pattern pattern = Pattern.compile("(<[^>]+>)|(:[\\w-]+:|\\b[\\w-]+\\b)");
-    Matcher matcher = pattern.matcher(message);
+    Matcher matcher = pattern.matcher(message); // your static final pattern
     StringBuilder sb = new StringBuilder();
 
     while (matcher.find()) {
@@ -522,31 +534,17 @@ public class ChatController {
       String word = matcher.group(2);
 
       if (tag != null) {
-        // Html tag, skip
         matcher.appendReplacement(sb, Matcher.quoteReplacement(tag));
       } else if (word != null) {
-        if (emoteMap.containsKey(word)) {
-          String dataUri = emoteMap.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
-                  "loading='lazy' style='vertical-align:middle;'>", dataUri, word, word);
-          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
-        } else if (sevenTvEmotes.containsKey(word)) {
-          String emotePath = sevenTvEmotes.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
-                  "loading='lazy' style='vertical-align:middle;'>", emotePath, word, word);
-          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
-        } else if (BTTVEmotes.containsKey(word)) {
-          String emotePath = BTTVEmotes.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
-                  "loading='lazy' style='vertical-align:middle;'>", emotePath, word, word);
-          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
-        } else if (FFZEmotes.containsKey(word)) {
-          String emotePath = FFZEmotes.get(word);
-          String imgTag = String.format("<img src='%s' title='%s' alt='%s'" +
-                  "loading='lazy' style='vertical-align:middle;'>", emotePath, word, word);
-          matcher.appendReplacement(sb, Matcher.quoteReplacement(imgTag));
+        String path = emotes.get(word); // one map, all providers
+        if (path != null) {
+          String img = String.format(
+                  "<img src='%s' title='%s' alt='%s' loading='lazy' style='vertical-align:middle;" +
+                          "'>",
+                  path, word, word
+          );
+          matcher.appendReplacement(sb, Matcher.quoteReplacement(img));
         } else {
-          // Just normal text
           matcher.appendReplacement(sb, Matcher.quoteReplacement(word));
         }
       }

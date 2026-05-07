@@ -94,6 +94,15 @@
                             <noManPages>true</noManPages>
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>
+
+                            <jvmArgs>
+                                <jvmArg>--add-opens javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED
+                                </jvmArg>
+                                <jvmArg>-Xms64m</jvmArg>
+                                <jvmArg>-Xmx256m</jvmArg>
+                                <jvmArg>-XX:+UseZGC</jvmArg>
+                                <jvmArg>-XX:SoftRefLRUPolicyMSPerMB=0</jvmArg>
+                            </jvmArgs>
                         </configuration>
                     </execution>
                 </executions>

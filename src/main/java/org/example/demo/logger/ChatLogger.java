@@ -26,6 +26,7 @@ public class ChatLogger {
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
   private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
   private static final Gson GSON = new Gson();
+  private final Map<String, Object> saveEntry = new HashMap<>();
 
   // channel name -> open writer
   private final Map<String, BufferedWriter> writers = new HashMap<>();
@@ -71,17 +72,18 @@ public class ChatLogger {
         BufferedWriter writer = getWriter(channel);
 
         // Building JSONL entry
-        Map<String, Object> entry = new HashMap<>();
-        entry.put("time", msg.timestamp.format(TIME_FORMAT));
-        entry.put("user", msg.username);
-        entry.put("color", msg.userColor);
-        entry.put("message", msg.content);
-        entry.put("mod", msg.isModerator);
-        entry.put("vip", msg.isVIP);
-        entry.put("system", msg.isSystemMessage);
+        saveEntry.put("time", msg.timestamp.format(TIME_FORMAT));
+        saveEntry.put("user", msg.username);
+        saveEntry.put("color", msg.userColor);
+        saveEntry.put("message", msg.content);
+        saveEntry.put("mod", msg.isModerator);
+        saveEntry.put("vip", msg.isVIP);
+        saveEntry.put("system", msg.isSystemMessage);
 
-        writer.write(GSON.toJson(entry));
+        writer.write(GSON.toJson(saveEntry));
         writer.newLine();
+
+        saveEntry.clear();
 //        writer.flush();
 
       } catch (IOException e) {
