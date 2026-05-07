@@ -14,6 +14,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class EmojiDownloader {
 
@@ -25,6 +26,7 @@ public class EmojiDownloader {
   private static final HttpClient client = HttpClient.newBuilder()
           .connectTimeout(Duration.ofSeconds(10))
           .build();
+  private static final Semaphore sem = new Semaphore(15);
 
   /**
    * Returns the local file:// URL for an emoji codepoint
@@ -77,6 +79,8 @@ public class EmojiDownloader {
   public static void downloadAll(Runnable onComplete) {
     Thread.startVirtualThread(() -> {
       try {
+        // Lock it to 15 at a time
+        sem.acquire();
         Files.createDirectories(EMOJI_DIR);
         Debug.info("Fetching full emoji file list via git tree API...");
         HttpRequest treeRequest = HttpRequest.newBuilder()
@@ -164,6 +168,8 @@ public class EmojiDownloader {
 
       } catch (Exception e) {
         Debug.error("Failed to download emoji set: {}", e.getMessage(), e);
+      } finally {
+        sem.release();
       }
     });
   }
