@@ -352,26 +352,29 @@ public class ChatController {
     int viewers = liveChecker.getViewers(activeChannelName);
     viewerCount.setText(String.valueOf(viewers));
     viewerCountName.setText("viewers");
-    try {
-      var meta = TwitchMeta.getChannelMetadata(activeChannelName);
-      String title = meta.get("title");
-      String game = meta.get("game");
 
-      String safeTitle = title.replace("\\", "\\\\").replace("'", "\\'");
-      String safeGame = game.replace("\\", "\\\\").replace("'", "\\'");
+    Thread.startVirtualThread(() -> {
+      try {
+        var meta = TwitchMeta.getChannelMetadata(activeChannelName);
+        String title = meta.get("title");
+        String game = meta.get("game");
 
-      Platform.runLater(() ->
-              engine.executeScript(String.format(
-                      "setChannelMetadata('%s', '%s');",
-                      safeTitle, safeGame
-              ))
-      );
-    } catch (Exception e) {
-      Debug.error("Failed to fetch channel metadata: " + e.getMessage());
-      Platform.runLater(() ->
-              engine.executeScript("setChannelMetadata('Error', 'Could not load info');")
-      );
-    }
+        String safeTitle = title.replace("\\", "\\\\").replace("'", "\\'");
+        String safeGame = game.replace("\\", "\\\\").replace("'", "\\'");
+
+        Platform.runLater(() ->
+                engine.executeScript(String.format(
+                        "setChannelMetadata('%s', '%s');",
+                        safeTitle, safeGame
+                ))
+        );
+      } catch (Exception e) {
+        Debug.error("Failed to fetch channel metadata: " + e.getMessage());
+        Platform.runLater(() ->
+                engine.executeScript("setChannelMetadata('Error', 'Could not load info');")
+        );
+      }
+    });
   }
 
   private void sortChannels() {

@@ -22,7 +22,7 @@ public class TwitchClient {
 
   private static final String SERVER = "irc.chat.twitch.tv";
   private static final int PORT = 6667;
-  private static final int BUFFER_SIZE = 512;
+  private static final int BUFFER_SIZE = 128;
   private static final String[] DEFAULT_COLORS = {
           "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#e67e22",
           "#1abc9c", "#f1c40f", "#95a5a6", "#e91e63", "#00bcd4"
